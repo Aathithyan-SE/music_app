@@ -1,0 +1,42 @@
+name: modizk_download
+description: "A seamless and intuitive offline music playback and download experience, designed for high user retention."
+publish_to: "none"
+version: 1.0.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  audioplayers: ^6.0.0
+  dio: ^5.8.0+1
+  permission_handler: ^12.0.0
+  shared_preferences: ^2.0.0
+  provider: ^6.0.0
+  path_provider: ^2.0.0
+  flutter_launcher_icons: ^0.14.3
+  just_audio: ^0.9.35
+  share_plus: ^11.0.0
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_foreground: "assets/images/logo.png"
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
