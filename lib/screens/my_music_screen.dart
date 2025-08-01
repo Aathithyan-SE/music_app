@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-
+import 'package:modizk_download/screens/local_music_player.dart';
+import 'package:provider/provider.dart';
+import '../services/local_music_provider.dart';
+import '../models/local_music_model.dart';
+import '../theme.dart';
 
 class MyMusicScreen extends StatefulWidget {
   const MyMusicScreen({super.key});
@@ -9,14 +13,283 @@ class MyMusicScreen extends StatefulWidget {
 }
 
 class _MyMusicScreenState extends State<MyMusicScreen> {
+  final TextEditingController searchController = TextEditingController();
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMusic();
+  }
+
+  void _initializeMusic() {
+    if (!_isInitialized) {
+      _isInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<LocalMusicProvider>().loadLocalSongs();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: Container(
-          child: Center(
-            child: Text("my music"),
-          ),
-        )
+    return Scaffold(
+      backgroundColor: MyColors.primaryBackground,
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            Expanded(
+              child: _buildContent(),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: MyColors.primaryBackground,
+      elevation: 0,
+      title: Text(
+        'My Music',
+        style: TextStyle(
+          color: MyColors.primaryText,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: TextField(
+        controller: searchController,
+        style: TextStyle(color: MyColors.primaryText),
+        decoration: InputDecoration(
+          hintText: 'Search songs...',
+          hintStyle: TextStyle(color: MyColors.secondaryText),
+          prefixIcon: Icon(Icons.search, color: MyColors.secondaryText),
+          suffixIcon: searchController.text.isNotEmpty
+              ? IconButton(
+            icon: Icon(Icons.clear, color: MyColors.secondaryText),
+            onPressed: () {
+              searchController.clear();
+              context.read<LocalMusicProvider>().clearSearch();
+              setState(() {});
+            },
+          )
+              : null,
+          filled: true,
+          fillColor: MyColors.secondaryText.withOpacity(0.1),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() {});
+          context.read<LocalMusicProvider>().searchLocalSongs(value);
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Consumer<LocalMusicProvider>(
+      builder: (context, provider, child) {
+        if (provider.songs.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return _buildSongsList(provider);
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.music_off,
+              size: 64,
+              color: MyColors.secondaryText,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              searchController.text.isNotEmpty ? 'No results found' : 'No music found',
+              style: TextStyle(
+                color: MyColors.primaryText,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              searchController.text.isNotEmpty
+                  ? 'Try searching with different keywords'
+                  : 'Make sure you have music files on your device',
+              style: TextStyle(
+                color: MyColors.secondaryText,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (searchController.text.isEmpty) ...[
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<LocalMusicProvider>().loadLocalSongs();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MyColors.primaryAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Refresh'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSongsList(LocalMusicProvider provider) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await provider.loadLocalSongs();
+      },
+      color: MyColors.primaryAccent,
+      child: ListView.builder(
+        itemCount: provider.songs.length,
+        itemBuilder: (context, index) {
+          final song = provider.songs[index];
+          final isCurrentSong = provider.currentLocalTrack?.id == song.id;
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: isCurrentSong
+                  ? MyColors.primaryAccent.withOpacity(0.1)
+                  : Colors.transparent,
+            ),
+            child: GestureDetector(
+              onTap: () => _playSong(provider, song, index),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: MyColors.primaryAccent.withOpacity(0.1),
+                        border: Border.all(
+                          color: MyColors.primaryAccent.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.music_note,
+                        color: MyColors.primaryAccent,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            song.title,
+                            style: TextStyle(
+                              color: isCurrentSong ? MyColors.primaryAccent : MyColors.primaryText,
+                              fontWeight: isCurrentSong ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+
+                          Row(
+                            children: [
+                              if (song.album != null) ...[
+                                Expanded(
+                                  child: Text(
+                                    song.album!,
+                                    style: TextStyle(
+                                      color: MyColors.secondaryText.withOpacity(0.7),
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '  ',
+                                  style: TextStyle(
+                                    color: MyColors.secondaryText.withOpacity(0.7),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                              Text(
+                                _formatDuration(song.durationAsTime),
+                                style: TextStyle(
+                                  color: MyColors.secondaryText.withOpacity(0.7),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _playSong(LocalMusicProvider provider, LocalMusicModel song, int index) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LocalMusicPlayerScreen(shouldStartPlaying: true),
+      ),
+    );
+    // CRITICAL FIX: Pass context to ensure SoundCloud music is stopped
+    await provider.playLocalTrack(song, index, context: context);
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 }

@@ -20,6 +20,8 @@ dependencies:
   flutter_launcher_icons: ^0.14.3
   just_audio: ^0.9.35
   share_plus: ^11.0.0
+  on_audio_query: ^2.9.0
+  audio_service: ^0.18.18
 
 flutter_launcher_icons:
   android: "launcher_icon"

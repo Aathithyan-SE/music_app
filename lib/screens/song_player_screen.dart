@@ -43,7 +43,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
     final musicProvider = Provider.of<MusicProvider>(context);
 
     return Scaffold(
-      backgroundColor: ModizkColors.primaryBackground,
+      backgroundColor: MyColors.primaryBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -81,7 +81,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(
               Icons.keyboard_arrow_down,
-              color: ModizkColors.primaryText,
+              color: MyColors.primaryText,
               size: 32,
             ),
           ),
@@ -111,7 +111,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: ModizkColors.primaryText.withValues(alpha: 0.1),
+            color: MyColors.primaryText.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -135,8 +135,8 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            ModizkColors.primaryAccent.withValues(alpha: 0.3),
-            ModizkColors.secondaryAccent.withValues(alpha: 0.3),
+            MyColors.primaryAccent.withValues(alpha: 0.3),
+            MyColors.secondaryAccent.withValues(alpha: 0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -145,7 +145,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       child: Center(
         child: Icon(
           Icons.music_note,
-          color: ModizkColors.primaryAccent,
+          color: MyColors.primaryAccent,
           size: 100,
         ),
       ),
@@ -158,7 +158,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
         Text(
           provider.currentTrack!.title ?? "Unknown Song",
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: ModizkColors.primaryText,
+            color: MyColors.primaryText,
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
@@ -169,7 +169,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
         Text(
           provider.currentTrack!.user.username ?? "Unknown Artist",
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: ModizkColors.secondaryText,
+            color: MyColors.secondaryText,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
@@ -194,10 +194,10 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
                 trackHeight: 4,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: ModizkColors.primaryAccent,
-                inactiveTrackColor: ModizkColors.secondaryText.withValues(alpha: 0.3),
-                thumbColor: ModizkColors.primaryAccent,
-                overlayColor: ModizkColors.primaryAccent.withValues(alpha: 0.2),
+                activeTrackColor: MyColors.primaryAccent,
+                inactiveTrackColor: MyColors.secondaryText.withValues(alpha: 0.3),
+                thumbColor: MyColors.primaryAccent,
+                overlayColor: MyColors.primaryAccent.withValues(alpha: 0.2),
               ),
               child: Slider(
                 value: _isDragging
@@ -227,13 +227,13 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
                   Text(
                     _formatDuration(currentPosition),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: ModizkColors.secondaryText,
+                      color: MyColors.secondaryText,
                     ),
                   ),
                   Text(
                     _formatDuration(totalDuration),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: ModizkColors.secondaryText,
+                      color: MyColors.secondaryText,
                     ),
                   ),
                 ],
@@ -256,7 +256,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
               children: [
                 _buildControlButton(
                   Icons.skip_previous,
-                  ModizkColors.primaryText,
+                  MyColors.primaryText,
                       () {
                         audioProvider.playPrevious(context);
                   },
@@ -267,7 +267,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
                   //     ? Icons.hourglass_empty
                   //     :
                   (audioProvider.isPlaying ? Icons.pause : Icons.play_arrow),
-                  ModizkColors.primaryAccent,
+                  MyColors.primaryAccent,
                   audioProvider.isLoading
                       ? null
                       : () {
@@ -282,7 +282,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
                 ),
                 _buildControlButton(
                   Icons.skip_next,
-                  ModizkColors.primaryText,
+                  MyColors.primaryText,
                       () {
                         audioProvider.playNext(context);
                       },
@@ -310,14 +310,14 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isMainButton
-            ? ModizkColors.primaryAccent.withValues(alpha: 0.1)
+            ? MyColors.primaryAccent.withValues(alpha: 0.1)
             : Colors.transparent,
       ),
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(
           icon,
-          color: onPressed == null ? ModizkColors.secondaryText : color,
+          color: onPressed == null ? MyColors.secondaryText : color,
           size: size,
         ),
       ),
@@ -357,7 +357,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
               isLiked = !isLiked;
             });
           },
-          color: isLiked ? ModizkColors.primaryAccent : ModizkColors.primaryText,
+          color: isLiked ? MyColors.primaryAccent : MyColors.primaryText,
         ),
         // _buildActionButton(
         //   context,
@@ -393,7 +393,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
             onPressed: onPressed,
             icon: Icon(
               icon,
-              color: color ?? ModizkColors.primaryText,
+              color: color ?? MyColors.primaryText,
               size: 24,
             ),
           ),
@@ -402,7 +402,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: ModizkColors.secondaryText,
+            color: MyColors.secondaryText,
           ),
           textAlign: TextAlign.center,
         ),

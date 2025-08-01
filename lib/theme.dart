@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ModizkColors {
-  // Primary background - Very Light Gray
+class MyColors {
   static const primaryBackground = Color(0xFFF8F8F8);
-  // Secondary background - Light Gray  
   static const secondaryBackground = Color(0xFFEEEEEE);
-  // Primary text & icons - Very Dark Gray
   static const primaryText = Color(0xFF212121);
-  // Primary accent - Fiery Orange
   static const primaryAccent = Color(0xFFFF5722);
-  // Secondary accent - Vivid Blue-Turquoise
   static const secondaryAccent = Color(0xFF00BCD4);
-  // Secondary text - Medium Gray
   static const secondaryText = Color(0xFF707070);
-  // Warning/Delete - Bright Red
   static const warning = Color(0xFFFF5722);
-  // White for contrast
   static const white = Color(0xFFFFFFFF);
-  // Dark mode surface
   static const darkSurface = Color(0xFF121212);
-  // Dark mode on surface
   static const darkOnSurface = Color(0xFF212121);
 }
 
@@ -46,43 +36,43 @@ class FontSizes {
 ThemeData get lightTheme => ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.light(
-    primary: ModizkColors.primaryAccent,
-    onPrimary: ModizkColors.white,
-    primaryContainer: ModizkColors.secondaryBackground,
-    onPrimaryContainer: ModizkColors.primaryText,
-    secondary: ModizkColors.secondaryAccent,
-    onSecondary: ModizkColors.white,
-    tertiary: ModizkColors.secondaryAccent,
-    onTertiary: ModizkColors.white,
-    error: ModizkColors.warning,
-    onError: ModizkColors.white,
-    errorContainer: ModizkColors.secondaryBackground,
-    onErrorContainer: ModizkColors.primaryText,
-    surface: ModizkColors.primaryBackground,
-    onSurface: ModizkColors.primaryText,
-    onSurfaceVariant: ModizkColors.secondaryText,
+    primary: MyColors.primaryAccent,
+    onPrimary: MyColors.white,
+    primaryContainer: MyColors.secondaryBackground,
+    onPrimaryContainer: MyColors.primaryText,
+    secondary: MyColors.secondaryAccent,
+    onSecondary: MyColors.white,
+    tertiary: MyColors.secondaryAccent,
+    onTertiary: MyColors.white,
+    error: MyColors.warning,
+    onError: MyColors.white,
+    errorContainer: MyColors.secondaryBackground,
+    onErrorContainer: MyColors.primaryText,
+    surface: MyColors.primaryBackground,
+    onSurface: MyColors.primaryText,
+    onSurfaceVariant: MyColors.secondaryText,
   ),
   brightness: Brightness.light,
-  scaffoldBackgroundColor: ModizkColors.primaryBackground,
+  scaffoldBackgroundColor: MyColors.primaryBackground,
   appBarTheme: AppBarTheme(
-    backgroundColor: ModizkColors.primaryBackground,
-    foregroundColor: ModizkColors.primaryText,
+    backgroundColor: MyColors.primaryBackground,
+    foregroundColor: MyColors.primaryText,
     elevation: 0,
   ),
   cardTheme: CardThemeData(
-    color: ModizkColors.secondaryBackground,
+    color: MyColors.secondaryBackground,
     elevation: 0,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: ModizkColors.primaryAccent,
-      foregroundColor: ModizkColors.white,
+      backgroundColor: MyColors.primaryAccent,
+      foregroundColor: MyColors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   ),
   iconTheme: IconThemeData(
-    color: ModizkColors.primaryText,
+    color: MyColors.primaryText,
   ),
   textTheme: TextTheme(
     displayLarge: GoogleFonts.inter(
@@ -151,43 +141,43 @@ ThemeData get lightTheme => ThemeData(
 ThemeData get darkTheme => ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.dark(
-    primary: ModizkColors.primaryAccent,
-    onPrimary: ModizkColors.white,
-    primaryContainer: ModizkColors.secondaryText,
-    onPrimaryContainer: ModizkColors.darkOnSurface,
-    secondary: ModizkColors.secondaryAccent,
-    onSecondary: ModizkColors.white,
-    tertiary: ModizkColors.secondaryAccent,
-    onTertiary: ModizkColors.white,
-    error: ModizkColors.warning,
-    onError: ModizkColors.white,
-    errorContainer: ModizkColors.secondaryText,
-    onErrorContainer: ModizkColors.darkOnSurface,
-    surface: ModizkColors.darkSurface,
-    onSurface: ModizkColors.darkOnSurface,
-    onSurfaceVariant: ModizkColors.secondaryText,
+    primary: MyColors.primaryAccent,
+    onPrimary: MyColors.white,
+    primaryContainer: MyColors.secondaryText,
+    onPrimaryContainer: MyColors.darkOnSurface,
+    secondary: MyColors.secondaryAccent,
+    onSecondary: MyColors.white,
+    tertiary: MyColors.secondaryAccent,
+    onTertiary: MyColors.white,
+    error: MyColors.warning,
+    onError: MyColors.white,
+    errorContainer: MyColors.secondaryText,
+    onErrorContainer: MyColors.darkOnSurface,
+    surface: MyColors.darkSurface,
+    onSurface: MyColors.darkOnSurface,
+    onSurfaceVariant: MyColors.secondaryText,
   ),
   brightness: Brightness.dark,
-  scaffoldBackgroundColor: ModizkColors.darkSurface,
+  scaffoldBackgroundColor: MyColors.darkSurface,
   appBarTheme: AppBarTheme(
-    backgroundColor: ModizkColors.darkSurface,
-    foregroundColor: ModizkColors.darkOnSurface,
+    backgroundColor: MyColors.darkSurface,
+    foregroundColor: MyColors.darkOnSurface,
     elevation: 0,
   ),
   cardTheme: CardThemeData(
-    color: ModizkColors.secondaryText,
+    color: MyColors.secondaryText,
     elevation: 0,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: ModizkColors.primaryAccent,
-      foregroundColor: ModizkColors.white,
+      backgroundColor: MyColors.primaryAccent,
+      foregroundColor: MyColors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   ),
   iconTheme: IconThemeData(
-    color: ModizkColors.darkOnSurface,
+    color: MyColors.darkOnSurface,
   ),
   textTheme: TextTheme(
     displayLarge: GoogleFonts.inter(

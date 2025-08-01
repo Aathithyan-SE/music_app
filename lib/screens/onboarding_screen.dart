@@ -36,7 +36,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ModizkColors.primaryBackground,
+      backgroundColor: MyColors.primaryBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -50,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Text(
                     'Skip',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ModizkColors.secondaryText,
+                      color: MyColors.secondaryText,
                     ),
                   ),
                 ),
@@ -87,8 +87,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _currentPage == index
-                          ? ModizkColors.primaryAccent
-                          : ModizkColors.secondaryText,
+                          ? MyColors.primaryAccent
+                          : MyColors.secondaryText,
                     ),
                   ),
                 ),
@@ -113,8 +113,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ModizkColors.primaryAccent,
-                          foregroundColor: ModizkColors.white,
+                          backgroundColor: MyColors.primaryAccent,
+                          foregroundColor: MyColors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -123,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Text(
                           'Next',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: ModizkColors.white,
+                            color: MyColors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -137,8 +137,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _completeOnboarding,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ModizkColors.primaryAccent,
-                          foregroundColor: ModizkColors.white,
+                          backgroundColor: MyColors.primaryAccent,
+                          foregroundColor: MyColors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -147,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Text(
                           'Start Now',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: ModizkColors.white,
+                            color: MyColors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -163,12 +163,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: TextButton(
                         onPressed: _continueAsGuest,
                         style: TextButton.styleFrom(
-                          foregroundColor: ModizkColors.secondaryText,
+                          foregroundColor: MyColors.secondaryText,
                         ),
                         child: Text(
                           'Continue as Guest',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: ModizkColors.secondaryText,
+                            color: MyColors.secondaryText,
                           ),
                         ),
                       ),
@@ -204,13 +204,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: ModizkColors.secondaryBackground,
+                    color: MyColors.secondaryBackground,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     Icons.music_note,
                     size: 100,
-                    color: ModizkColors.primaryAccent,
+                    color: MyColors.primaryAccent,
                   ),
                 ),
               ),
@@ -224,7 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               page.title,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: ModizkColors.primaryText,
+                color: MyColors.primaryText,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -241,7 +241,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               page.description,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: ModizkColors.secondaryText,
+                color: MyColors.secondaryText,
                 height: 1.4, // Reduced line height from 1.5
               ),
               textAlign: TextAlign.center,

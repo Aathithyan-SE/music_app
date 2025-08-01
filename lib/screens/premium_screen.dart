@@ -50,7 +50,7 @@ class _PremiumScreenState extends State<PremiumScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ModizkColors.primaryBackground,
+      backgroundColor: MyColors.primaryBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -80,17 +80,17 @@ class _PremiumScreenState extends State<PremiumScreen>
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: ModizkColors.secondaryBackground,
+                          color: MyColors.secondaryBackground,
                           borderRadius: BorderRadius.circular(40),
                           border: Border.all(
-                            color: ModizkColors.primaryAccent.withOpacity(0.3),
+                            color: MyColors.primaryAccent.withOpacity(0.3),
                             width: 2,
                           ),
                         ),
                         child: Icon(
                           Icons.lock_rounded,
                           size: 40,
-                          color: ModizkColors.primaryAccent,
+                          color: MyColors.primaryAccent,
                         ),
                       ),
 
@@ -103,7 +103,7 @@ class _PremiumScreenState extends State<PremiumScreen>
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: ModizkColors.primaryText,
+                          color: MyColors.primaryText,
                           height: 1.2,
                         ),
                       ),
@@ -114,7 +114,7 @@ class _PremiumScreenState extends State<PremiumScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: ModizkColors.secondaryBackground,
+                          color: MyColors.secondaryBackground,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: const Text(
@@ -132,7 +132,7 @@ class _PremiumScreenState extends State<PremiumScreen>
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w600,
-                          color: ModizkColors.primaryText,
+                          color: MyColors.primaryText,
                           height: 1.3,
                         ),
                       ),
@@ -144,7 +144,7 @@ class _PremiumScreenState extends State<PremiumScreen>
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
-                          color: ModizkColors.secondaryText,
+                          color: MyColors.secondaryText,
                           height: 1.5,
                         ),
                       ),
@@ -156,7 +156,7 @@ class _PremiumScreenState extends State<PremiumScreen>
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
-                          color: ModizkColors.secondaryText,
+                          color: MyColors.secondaryText,
                           height: 1.5,
                         ),
                       ),
@@ -184,7 +184,7 @@ class _PremiumScreenState extends State<PremiumScreen>
           text,
           style: TextStyle(
             fontSize: 15,
-            color: ModizkColors.primaryText,
+            color: MyColors.primaryText,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -198,7 +198,7 @@ class _PremiumScreenState extends State<PremiumScreen>
       barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: ModizkColors.secondaryBackground,
+          backgroundColor: MyColors.secondaryBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -207,7 +207,7 @@ class _PremiumScreenState extends State<PremiumScreen>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: ModizkColors.primaryText,
+              color: MyColors.primaryText,
             ),
           ),
           content: Text(
@@ -215,7 +215,7 @@ class _PremiumScreenState extends State<PremiumScreen>
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
-              color: ModizkColors.secondaryText,
+              color: MyColors.secondaryText,
             ),
           ),
           actions: [
@@ -224,7 +224,7 @@ class _PremiumScreenState extends State<PremiumScreen>
               child: Text(
                 'Got it!',
                 style: TextStyle(
-                  color: ModizkColors.primaryAccent,
+                  color: MyColors.primaryAccent,
                   fontWeight: FontWeight.bold,
                 ),
               ),

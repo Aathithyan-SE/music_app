@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:modizk_download/models/sound_cloud_search_response.dart';
 import 'package:modizk_download/services/music_provider.dart';
+import 'package:modizk_download/services/local_music_provider.dart';
 import 'package:provider/provider.dart';
 
 class SoundCloudAudioProvider with ChangeNotifier {
@@ -141,6 +142,12 @@ class SoundCloudAudioProvider with ChangeNotifier {
 
   Future<void> playTrack(BuildContext context) async {
     try {
+      // CRITICAL FIX: Stop local music before playing SoundCloud
+      final localProvider = Provider.of<LocalMusicProvider>(context, listen: false);
+      if (localProvider.isLocalPlaying) {
+        await localProvider.stopLocal();
+      }
+
       await _player.stop();
       _isLoading = true;
       notifyListeners();

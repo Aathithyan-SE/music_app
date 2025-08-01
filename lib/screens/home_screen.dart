@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final provider = Provider.of<MusicProvider>(context);
 
     return Scaffold(
-      backgroundColor: ModizkColors.primaryBackground,
+      backgroundColor: MyColors.primaryBackground,
       body: SafeArea(
         child: MiniPlayerWrapper(
           child: _getCurrentScreen(),
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
-        color: ModizkColors.primaryBackground,
+        color: MyColors.primaryBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -74,9 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: ModizkColors.primaryBackground,
-        selectedItemColor: ModizkColors.primaryAccent,
-        unselectedItemColor: ModizkColors.secondaryText,
+        backgroundColor: MyColors.primaryBackground,
+        selectedItemColor: MyColors.primaryAccent,
+        unselectedItemColor: MyColors.secondaryText,
         selectedLabelStyle: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -190,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: ModizkColors.secondaryBackground,
+              color: MyColors.secondaryBackground,
               borderRadius: BorderRadius.circular(12),
             ),
             child: TextField(
@@ -209,10 +209,10 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               decoration: InputDecoration(
                 hintText: 'What would you like to listen to?',
-                hintStyle: TextStyle(color: ModizkColors.secondaryText),
+                hintStyle: TextStyle(color: MyColors.secondaryText),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: ModizkColors.secondaryText,
+                  color: MyColors.secondaryText,
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -244,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: ModizkColors.secondaryBackground,
+                color: MyColors.secondaryBackground,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ModizkColors.secondaryText,
+                color: MyColors.secondaryText,
               ),
             ),
           ],

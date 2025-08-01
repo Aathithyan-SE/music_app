@@ -36,7 +36,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
     return MiniPlayerWrapper(
       child: Scaffold(
-        backgroundColor: ModizkColors.primaryBackground,
+        backgroundColor: MyColors.primaryBackground,
         body: SafeArea(
           child: Column(
             children: [
@@ -62,7 +62,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             onPressed: () => Navigator.of(context).pop(),
             icon: Icon(
               Icons.arrow_back,
-              color: ModizkColors.primaryText,
+              color: MyColors.primaryText,
             ),
           ),
 
@@ -71,7 +71,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: ModizkColors.secondaryBackground,
+                color: MyColors.secondaryBackground,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
@@ -83,10 +83,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 },
                 decoration: InputDecoration(
                   hintText: 'Search song',
-                  hintStyle: TextStyle(color: ModizkColors.secondaryText),
+                  hintStyle: TextStyle(color: MyColors.secondaryText),
                   prefixIcon: Icon(
                     Icons.search,
-                    color: ModizkColors.secondaryText,
+                    color: MyColors.secondaryText,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -126,7 +126,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: ModizkColors.secondaryBackground,
+        color: MyColors.secondaryBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
@@ -136,7 +136,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: ModizkColors.primaryBackground,
+            color: MyColors.primaryBackground,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -153,7 +153,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         title: Text(
           song.title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: ModizkColors.primaryText,
+            color: MyColors.primaryText,
             fontWeight: FontWeight.bold,
           ),
           maxLines: 1,
@@ -163,7 +163,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         subtitle: Text(
           song.user.username,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: ModizkColors.secondaryText,
+            color: MyColors.secondaryText,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -190,7 +190,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             //
             _buildActionButton(
               Icons.play_arrow,
-              ModizkColors.primaryAccent,
+              MyColors.primaryAccent,
               () => playMusic(song, provider, index),
             ),
           ],
@@ -217,10 +217,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildAlbumPlaceholder() {
     return Container(
-      color: ModizkColors.primaryBackground,
+      color: MyColors.primaryBackground,
       child: Icon(
         Icons.music_note,
-        color: ModizkColors.secondaryText,
+        color: MyColors.secondaryText,
         size: 28,
       ),
     );
@@ -236,7 +236,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             Icon(
               Icons.search_off,
               size: 80,
-              color: ModizkColors.secondaryText,
+              color: MyColors.secondaryText,
             ),
 
             const SizedBox(height: 16),
@@ -244,7 +244,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             Text(
               'No results found for your search.',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: ModizkColors.primaryText,
+                color: MyColors.primaryText,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -255,7 +255,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             Text(
               'Try searching for \'popular artists\', \'new playlists\'.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: ModizkColors.secondaryText,
+                color: MyColors.secondaryText,
               ),
               textAlign: TextAlign.center,
             ),
@@ -274,8 +274,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             provider.searchLoadMoreSong(provider.soundCloudResponse!.nextHref!);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: ModizkColors.secondaryBackground,
-          foregroundColor: ModizkColors.primaryText,
+          backgroundColor: MyColors.secondaryBackground,
+          foregroundColor: MyColors.primaryText,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -286,7 +286,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           child: Text(
             provider.songsLoadMoreStatus == 1 ? 'Loading...':'Load More',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: ModizkColors.primaryText,
+              color: MyColors.primaryText,
             ),
           ),
         ),

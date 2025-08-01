@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:modizk_download/network/dio_network_services.dart';
 import 'package:modizk_download/screens/splash_screen.dart';
+import 'package:modizk_download/services/local_music_provider.dart';
 import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/music_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
@@ -40,6 +41,7 @@ class _MusicMp3DownloaderState extends State<MusicMp3Downloader> {
         ChangeNotifierProvider(create: (_) => StorageService()),
         ChangeNotifierProvider(create: (_) => MusicProvider(_musicService)),
         ChangeNotifierProvider(create: (_) => SoundCloudAudioProvider()),
+        ChangeNotifierProvider(create: (_) => LocalMusicProvider()),
       ],
       child: MaterialApp(
         title: 'Music Mp3 Downloader',
