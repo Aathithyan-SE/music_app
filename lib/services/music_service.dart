@@ -49,4 +49,12 @@ class MusicService{
     }
   }
 
+  Future<Response> getDownloadableTrack(String transcodingUrl) async {
+    try {
+      return _dioService.get('/play/track?link=$transcodingUrl');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 }

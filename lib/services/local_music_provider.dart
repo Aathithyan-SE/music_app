@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 import '../models/local_music_model.dart';
 import '../services/sound_cloud_audio_provider.dart';
+import '../services/native_media_notification_service.dart';
 import 'local_music_service.dart';
 import 'package:provider/provider.dart';
 
@@ -46,24 +47,29 @@ class LocalMusicProvider with ChangeNotifier {
 
   LocalMusicProvider() {
     _setupLocalPlayerListeners();
+    // Don't setup notification callbacks here - they'll be set up when needed
   }
 
   void _setupLocalPlayerListeners() {
     // Listen to playing state changes
     _localPlayer.playingStream.listen((playing) {
       _isLocalPlaying = playing;
+      _updateNotification(); // Update on play/pause state change
       notifyListeners();
     });
 
     // Listen to position changes
     _localPlayer.positionStream.listen((position) {
       _localCurrentPosition = position;
+      // Let the notification service handle throttling
+      _updateNotification();
       notifyListeners();
     });
 
     // Listen to duration changes
     _localPlayer.durationStream.listen((duration) {
       _localTotalDuration = duration ?? Duration.zero;
+      _updateNotification(); // Update when duration is known
       notifyListeners();
     });
 
@@ -85,6 +91,84 @@ class LocalMusicProvider with ChangeNotifier {
           playerState.playing == false) {
       }
     });
+  }
+
+  void _setupNotificationCallbacks() {
+    log('🎵 Local _setupNotificationCallbacks called - isInitialized: ${NativeMediaNotificationService.instance.isInitialized}');
+    if (NativeMediaNotificationService.instance.isInitialized) {
+      log('🎵 Setting up notification callbacks for Local Music');
+      NativeMediaNotificationService.instance.setLocalCallbacks(
+        onPlay: () async {
+          log('🎵 Local notification play button pressed');
+          await resumeLocal();
+        },
+        onPause: () async {
+          log('🎵 Local notification pause button pressed');
+          await pauseLocal();
+        },
+        onStop: () async {
+          log('🎵 Local notification stop button pressed');
+          await stopLocal();
+        },
+        onNext: () async {
+          log('🎵 Local notification next button pressed');
+          await playNextLocal();
+        },
+        onPrevious: () async {
+          log('🎵 Local notification previous button pressed');
+          await playPreviousLocal();
+        },
+        onSeek: (position) async {
+          log('🎵 Local notification seek called: ${position.inSeconds}s');
+          await seekLocal(position);
+        },
+      );
+    } else {
+      log('❌ Cannot setup local notification callbacks - service not initialized');
+    }
+  }
+
+  Future<void> _updateNotification() async {
+    log('🎵 Local _updateNotification called - currentTrack: ${_currentLocalTrack?.title}, isPlaying: $_isLocalPlaying');
+    
+    if (_currentLocalTrack != null) {
+      // Wait for service to be initialized if it's not ready yet
+      if (!NativeMediaNotificationService.instance.isInitialized) {
+        log('🎵 Waiting for notification service to initialize...');
+        // Wait up to 5 seconds for initialization
+        for (int i = 0; i < 50; i++) {
+          if (NativeMediaNotificationService.instance.isInitialized) break;
+          await Future.delayed(Duration(milliseconds: 100));
+        }
+        
+        if (!NativeMediaNotificationService.instance.isInitialized) {
+          log('❌ Notification service still not initialized after waiting');
+          return;
+        }
+      }
+      
+      // Get artwork bytes for local music
+      Uint8List? artworkBytes;
+      try {
+        artworkBytes = await getSongArtwork(_currentLocalTrack!.id);
+      } catch (e) {
+        log('Error getting artwork for notification: $e');
+      }
+
+      try {
+        await NativeMediaNotificationService.instance.showMusicNotification(
+          title: _currentLocalTrack!.title,
+          artist: _currentLocalTrack!.artist,
+          isPlaying: _isLocalPlaying,
+          currentPosition: _localCurrentPosition,
+          totalDuration: _localTotalDuration,
+          artworkBytes: artworkBytes,
+          isLocal: true,
+        );
+      } catch (e) {
+        log('❌ Error updating local music notification: $e');
+      }
+    }
   }
 
   void _handleLocalTrackCompletion() {
@@ -148,6 +232,9 @@ class LocalMusicProvider with ChangeNotifier {
 
   Future<void> playLocalTrack(LocalMusicModel track, int index, {BuildContext? context}) async {
     try {
+      // Setup notification callbacks if not already done
+      _setupNotificationCallbacks();
+      
       // CRITICAL FIX: Stop SoundCloud music before playing local
       if (context != null) {
         final soundCloudProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
@@ -166,6 +253,7 @@ class LocalMusicProvider with ChangeNotifier {
 
       await _localPlayer.setFilePath(track.filePath);
       await _localPlayer.play();
+      await _updateNotification();
 
       _isLocalLoading = false;
       notifyListeners();
@@ -219,6 +307,11 @@ class LocalMusicProvider with ChangeNotifier {
   Future<void> stopLocal() async {
     try {
       await _localPlayer.stop();
+      // Hide notification when stopped and reset active provider
+      if (NativeMediaNotificationService.instance.isInitialized) {
+        await NativeMediaNotificationService.instance.hideNotification();
+        NativeMediaNotificationService.instance.setActiveProvider('none');
+      }
       // _currentLocalPosition = Duration.zero;
       notifyListeners();
     } catch (e) {
@@ -354,6 +447,10 @@ class LocalMusicProvider with ChangeNotifier {
   @override
   void dispose() {
     log('Disposing LocalMusicProvider');
+    // Hide notification when disposing
+    if (NativeMediaNotificationService.instance.isInitialized) {
+      NativeMediaNotificationService.instance.hideNotification();
+    }
     _localPlayer.dispose();
     super.dispose();
   }

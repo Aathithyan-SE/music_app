@@ -9,6 +9,9 @@ class MusicProvider extends ChangeNotifier{
 
   MusicProvider(this._musicService);
 
+  // Getter to expose the music service
+  MusicService get musicService => _musicService;
+
   int tokenStatus = 0;
   String tokenError = '';
 

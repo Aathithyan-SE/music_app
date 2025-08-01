@@ -91,7 +91,7 @@ class _MyMusicScreenState extends State<MyMusicScreen> {
           )
               : null,
           filled: true,
-          fillColor: MyColors.secondaryText.withOpacity(0.1),
+          fillColor: MyColors.secondaryText.withValues(alpha: 0.1),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -177,92 +177,113 @@ class _MyMusicScreenState extends State<MyMusicScreen> {
       },
       color: MyColors.primaryAccent,
       child: ListView.builder(
+        padding: const EdgeInsets.all(16),
         itemCount: provider.songs.length,
         itemBuilder: (context, index) {
           final song = provider.songs[index];
-          final isCurrentSong = provider.currentLocalTrack?.id == song.id;
 
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: isCurrentSong
-                  ? MyColors.primaryAccent.withOpacity(0.1)
-                  : Colors.transparent,
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 1,
+            shadowColor: MyColors.secondaryText.withValues(alpha: 0.1),
+            color: MyColors.primaryBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: MyColors.secondaryText.withValues(alpha: 0.1),
+                width: 1,
+              ),
             ),
-            child: GestureDetector(
+            child: InkWell(
               onTap: () => _playSong(provider, song, index),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: MyColors.primaryAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [
+                            MyColors.primaryAccent.withValues(alpha: 0.2),
+                            MyColors.primaryAccent.withValues(alpha: 0.1),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         border: Border.all(
-                          color: MyColors.primaryAccent.withOpacity(0.2),
+                          color: MyColors.primaryAccent.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
                       child: Icon(
                         Icons.music_note,
                         color: MyColors.primaryAccent,
-                        size: 24,
+                        size: 28,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             song.title,
-                            style: TextStyle(
-                              color: isCurrentSong ? MyColors.primaryAccent : MyColors.primaryText,
-                              fontWeight: isCurrentSong ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 16,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: MyColors.primaryText,
+                              fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 4),
-
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               if (song.album != null) ...[
+                                Icon(
+                                  Icons.album,
+                                  size: 12,
+                                  color: MyColors.secondaryText.withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
                                     song.album!,
-                                    style: TextStyle(
-                                      color: MyColors.secondaryText.withOpacity(0.7),
-                                      fontSize: 12,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: MyColors.secondaryText.withValues(alpha: 0.7),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                Text(
-                                  '  ',
-                                  style: TextStyle(
-                                    color: MyColors.secondaryText.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                const SizedBox(width: 8),
                               ],
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: MyColors.secondaryText.withValues(alpha: 0.7),
+                              ),
+                              const SizedBox(width: 4),
                               Text(
                                 _formatDuration(song.durationAsTime),
-                                style: TextStyle(
-                                  color: MyColors.secondaryText.withOpacity(0.7),
-                                  fontSize: 12,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: MyColors.secondaryText.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.play_arrow,
+                        color: MyColors.primaryAccent,
+                        size: 20,
                       ),
                     ),
                   ],

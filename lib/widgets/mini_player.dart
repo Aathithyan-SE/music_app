@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:modizk_download/screens/local_music_player.dart';
-import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/local_music_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
+import 'package:modizk_download/services/native_media_notification_service.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:modizk_download/screens/song_player_screen.dart';
 
@@ -32,10 +32,26 @@ class _MiniPlayerState extends State<MiniPlayer> {
         bool isUsingSoundCloud = false;
         bool isUsingLocal = false;
 
+        // Determine which provider to show based on active provider from notification service
+        final activeProvider = NativeMediaNotificationService.instance.activeProvider;
+        
         if (hasSoundCloudTrack && hasLocalTrack) {
-          isUsingSoundCloud = audioProvider.isPlaying ||
-              (!localProvider.isLocalPlaying && hasSoundCloudTrack);
-          isUsingLocal = !isUsingSoundCloud;
+          // Use the active provider from notification service when both tracks exist
+          if (activeProvider == 'soundcloud') {
+            isUsingSoundCloud = true;
+          } else if (activeProvider == 'local') {
+            isUsingLocal = true;
+          } else {
+            // Fallback to the currently playing source
+            if (audioProvider.isPlaying) {
+              isUsingSoundCloud = true;
+            } else if (localProvider.isLocalPlaying) {
+              isUsingLocal = true;
+            } else {
+              // Default to local if neither is playing
+              isUsingLocal = true;
+            }
+          }
         } else if (hasSoundCloudTrack) {
           isUsingSoundCloud = true;
         } else {
@@ -152,8 +168,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
     String artist = "Unknown Artist";
 
     if (isUsingSoundCloud && audioProvider.currentTrack != null) {
-      title = audioProvider.currentTrack!.title ?? "Unknown Song";
-      artist = audioProvider.currentTrack!.user.username ?? "Unknown Artist";
+      title = audioProvider.currentTrack!.title;
+      artist = audioProvider.currentTrack!.user.username;
     } else if (!isUsingSoundCloud && localProvider.currentLocalTrack != null) {
       title = localProvider.currentLocalTrack!.title;
       artist = localProvider.currentLocalTrack!.artist;
@@ -187,7 +203,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
   Widget _buildPreviousButton(SoundCloudAudioProvider audioProvider, LocalMusicProvider localProvider, bool isUsingSoundCloud) {
     final bool hasPrevious = isUsingSoundCloud
-        ? (audioProvider.currentIndex > 0)
+        ? audioProvider.hasPrevious
         : localProvider.hasPreviousTrack;
 
     return Container(
@@ -301,9 +317,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
   }
 
   bool _hasSoundCloudNext(SoundCloudAudioProvider audioProvider, BuildContext context) {
-    final musicProvider = Provider.of<MusicProvider>(context, listen: false);
-    return musicProvider.soundCloudResponse != null &&
-        audioProvider.currentIndex < musicProvider.soundCloudResponse!.collection.length - 1;
+    // Use the new context-free hasNext getter
+    return audioProvider.hasNext;
   }
 
   Widget _buildProgressBar(SoundCloudAudioProvider audioProvider, LocalMusicProvider localProvider, bool isUsingSoundCloud) {

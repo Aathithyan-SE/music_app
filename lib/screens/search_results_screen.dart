@@ -1,14 +1,12 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:modizk_download/models/sound_cloud_search_response.dart' as t;
 import 'package:modizk_download/screens/song_player_screen.dart';
 import 'package:modizk_download/services/music_provider.dart';
+import 'package:modizk_download/services/playlist_service.dart';
+import 'package:modizk_download/services/download_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
-import 'package:modizk_download/services/storage_service.dart';
-import 'package:modizk_download/models/song.dart';
 import 'package:modizk_download/widgets/mini_player.dart';
 
 class SearchResultsScreen extends StatefulWidget {
@@ -172,22 +170,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // _buildActionButton(
-            //   Icons.add,
-            //   ModizkColors.primaryText,
-            //   () => _showAddToPlaylistDialog(song),
-            // ),
-
+            _buildActionButton(
+              Icons.more_vert,
+              MyColors.primaryText,
+              () => _showMoreOptionsBottomSheet(song),
+            ),
+            
             const SizedBox(width: 8),
-
-            // _buildActionButton(
-            //   Icons.download_outlined,
-            //   ModizkColors.primaryText,
-            //   () => _downloadSong(song),
-            // ),
-            //
-            // const SizedBox(width: 8),
-            //
+            
             _buildActionButton(
               Icons.play_arrow,
               MyColors.primaryAccent,
@@ -296,12 +286,334 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   void playMusic(t.Track myTrack, MusicProvider provider, int index) async {
     final songProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    
+    // Add to recent songs
+    playlistService.addToRecentSongs(myTrack);
+    
     songProvider.setCurrentTrack(myTrack, index);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => SongPlayerScreen(
         shouldStartPlaying: true,
       ),),
+    );
+  }
+
+  void _showAddToPlaylistDialog(t.Track track) {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyColors.secondaryBackground,
+        title: Text(
+          'Add to Playlist',
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        content: Container(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.add, color: MyColors.primaryAccent),
+                title: Text(
+                  'Create New Playlist',
+                  style: TextStyle(color: MyColors.primaryText),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showCreatePlaylistDialog(track);
+                },
+              ),
+              if (playlistService.playlists.isNotEmpty) const Divider(),
+              ...playlistService.playlists.map((playlist) => ListTile(
+                leading: Icon(Icons.playlist_play, color: MyColors.primaryText),
+                title: Text(
+                  playlist.name,
+                  style: TextStyle(color: MyColors.primaryText),
+                ),
+                subtitle: Text(
+                  '${playlist.tracks.length} songs',
+                  style: TextStyle(color: MyColors.secondaryText),
+                ),
+                onTap: () async {
+                  await playlistService.addTrackToPlaylist(playlist.id, track);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Added "${track.title}" to ${playlist.name}'),
+                      backgroundColor: MyColors.secondaryBackground,
+                    ),
+                  );
+                },
+              )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: MyColors.secondaryText)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreatePlaylistDialog(t.Track track) {
+    final TextEditingController nameController = TextEditingController();
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyColors.secondaryBackground,
+        title: Text(
+          'Create New Playlist',
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            labelText: 'Playlist Name',
+            labelStyle: TextStyle(color: MyColors.secondaryText),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: MyColors.secondaryText),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: MyColors.primaryAccent),
+            ),
+          ),
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: MyColors.secondaryText)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isNotEmpty) {
+                final playlist = await playlistService.createPlaylist(
+                  name: nameController.text.trim(),
+                );
+                await playlistService.addTrackToPlaylist(playlist.id, track);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Created "${playlist.name}" and added "${track.title}"'),
+                    backgroundColor: MyColors.secondaryBackground,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MyColors.primaryAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Create & Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleLikeSong(t.Track track) {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    final wasLiked = playlistService.isTrackLiked(track);
+    
+    playlistService.toggleLikeSong(track);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          wasLiked 
+              ? 'Removed "${track.title}" from liked songs'
+              : 'Added "${track.title}" to liked songs',
+        ),
+        backgroundColor: MyColors.secondaryBackground,
+      ),
+    );
+  }
+
+  void _downloadTrack(t.Track track) async {
+    final downloadService = Provider.of<DownloadService>(context, listen: false);
+    final musicProvider = Provider.of<MusicProvider>(context, listen: false);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Starting download of "${track.title}"...'),
+        backgroundColor: MyColors.secondaryBackground,
+      ),
+    );
+
+    final success = await downloadService.downloadTrack(track, musicProvider);
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Downloaded "${track.title}" successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to download "${track.title}"'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showMoreOptionsBottomSheet(t.Track song) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: MyColors.secondaryBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with song info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: MyColors.primaryBackground,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: song.artworkUrl != null
+                          ? Image.network(
+                              song.artworkUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildAlbumPlaceholder(),
+                            )
+                          : _buildAlbumPlaceholder(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          song.title,
+                          style: TextStyle(
+                            color: MyColors.primaryText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          song.user.username,
+                          style: TextStyle(
+                            color: MyColors.secondaryText,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const Divider(height: 1),
+            
+            // Options
+            Consumer<PlaylistService>(
+              builder: (context, playlistService, child) {
+                final isLiked = playlistService.isTrackLiked(song);
+                return ListTile(
+                  leading: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : MyColors.primaryText,
+                  ),
+                  title: Text(
+                    isLiked ? 'Remove from Liked Songs' : 'Add to Liked Songs',
+                    style: TextStyle(color: MyColors.primaryText),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _toggleLikeSong(song);
+                  },
+                );
+              },
+            ),
+            
+            ListTile(
+              leading: Icon(Icons.add, color: MyColors.primaryText),
+              title: Text(
+                'Add to Playlist',
+                style: TextStyle(color: MyColors.primaryText),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddToPlaylistDialog(song);
+              },
+            ),
+            
+            Consumer<DownloadService>(
+              builder: (context, downloadService, child) {
+                final trackId = song.id.toString();
+                final isDownloaded = downloadService.isTrackDownloaded(trackId);
+                final isDownloading = downloadService.isTrackDownloading(trackId);
+                
+                IconData icon;
+                Color color;
+                String title;
+                bool isEnabled = true;
+                
+                if (isDownloaded) {
+                  icon = Icons.download_done;
+                  color = Colors.green;
+                  title = 'Downloaded';
+                  isEnabled = false;
+                } else if (isDownloading) {
+                  icon = Icons.downloading;
+                  color = MyColors.primaryAccent;
+                  title = 'Downloading...';
+                  isEnabled = false;
+                } else {
+                  icon = Icons.download_outlined;
+                  color = MyColors.primaryText;
+                  title = 'Download';
+                }
+
+                return ListTile(
+                  leading: Icon(icon, color: color),
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                      color: isEnabled ? MyColors.primaryText : MyColors.secondaryText,
+                    ),
+                  ),
+                  onTap: isEnabled ? () {
+                    Navigator.pop(context);
+                    _downloadTrack(song);
+                  } : null,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
