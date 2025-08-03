@@ -359,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: MyColors.secondaryBackground,
+        color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: MyColors.primaryAccent.withValues(alpha: 0.2),
@@ -425,9 +425,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEmptyLikedSongs() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin:  EdgeInsets.only(left: 16, right: 16, bottom: 16),
       decoration: BoxDecoration(
-        color: MyColors.secondaryBackground,
+        color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.red.withValues(alpha: 0.2),
