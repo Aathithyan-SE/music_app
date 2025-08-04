@@ -184,23 +184,6 @@ class FallbackLocalMusicService {
             ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
             : b.title.toLowerCase().compareTo(a.title.toLowerCase()));
         break;
-      case SortCriteria.artist:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.artist.toLowerCase().compareTo(b.artist.toLowerCase())
-            : b.artist.toLowerCase().compareTo(a.artist.toLowerCase()));
-        break;
-      case SortCriteria.album:
-        _filteredSongs.sort((a, b) {
-          final albumA = (a.album ?? '').toLowerCase();
-          final albumB = (b.album ?? '').toLowerCase();
-          return ascending ? albumA.compareTo(albumB) : albumB.compareTo(albumA);
-        });
-        break;
-      case SortCriteria.duration:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.duration.compareTo(b.duration)
-            : b.duration.compareTo(a.duration));
-        break;
       case SortCriteria.dateAdded:
       // Sort by filename for now
         _filteredSongs.sort((a, b) => ascending
@@ -234,8 +217,5 @@ class FallbackLocalMusicService {
 
 enum SortCriteria {
   title,
-  artist,
-  album,
-  duration,
   dateAdded,
 }

@@ -9,6 +9,7 @@ import 'package:modizk_download/services/storage_service.dart';
 import 'package:modizk_download/services/native_media_notification_service.dart';
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/download_service.dart';
+import 'package:modizk_download/services/my_music_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 
@@ -87,6 +88,7 @@ class _MusicMp3DownloaderState extends State<MusicMp3Downloader> with WidgetsBin
         ChangeNotifierProvider(create: (_) => MusicProvider(_musicService)),
         ChangeNotifierProvider(create: (_) => SoundCloudAudioProvider()),
         ChangeNotifierProvider(create: (_) => LocalMusicProvider()),
+        ChangeNotifierProvider(create: (_) => MyMusicProvider()),
       ],
       child: MaterialApp(
         title: 'Music Mp3 Downloader',

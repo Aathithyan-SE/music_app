@@ -8,6 +8,7 @@ import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:modizk_download/widgets/mini_player.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String query;
@@ -128,6 +129,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
+        onTap: () => playMusic(song, provider, index),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 56,
@@ -565,13 +567,24 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                _showAddToPlaylistDialog(song);
+                                _showAddToPlaylistDialog(song);
+               },
+             ),
+             ListTile(
+              leading: Icon(Icons.share, color: MyColors.primaryText),
+              title: Text(
+                'Share',
+                style: TextStyle(color: MyColors.primaryText),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Share.share('Check out this awesome music app (https://play.google.com/store/apps/details?id=com.mycompany.CounterApp)');
               },
             ),
             
-            Consumer<DownloadService>(
-              builder: (context, downloadService, child) {
-                final trackId = song.id.toString();
+             Consumer<DownloadService>(
+               builder: (context, downloadService, child) {
+                 final trackId = song.id.toString();
                 final isDownloaded = downloadService.isTrackDownloaded(trackId);
                 final isDownloading = downloadService.isTrackDownloading(trackId);
                 

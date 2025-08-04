@@ -22,11 +22,9 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
         builder: (context, playlistService, child) {
           return Column(
             children: [
-              _buildHeader(context, playlistService),
+              _buildHeader(context),
               Expanded(
-                child: playlistService.playlists.isEmpty
-                    ? _buildEmptyState(context, playlistService)
-                    : _buildPlaylistList(context, playlistService),
+                child: _buildPlaylistGrid(context, playlistService),
               ),
             ],
           );
@@ -35,11 +33,10 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, PlaylistService playlistService) {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             'My Playlists',
@@ -48,155 +45,184 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          IconButton(
-            onPressed: () => _showCreatePlaylistDialog(context, playlistService),
-            icon: Icon(
-              Icons.add,
-              color: MyColors.primaryAccent,
-              size: 28,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, PlaylistService playlistService) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.playlist_play,
-              size: 80,
-              color: MyColors.secondaryText,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No playlists yet',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: MyColors.primaryText,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create your first playlist to organize your favorite songs',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: MyColors.secondaryText,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _showCreatePlaylistDialog(context, playlistService),
-              icon: const Icon(Icons.add),
-              label: const Text('Create Playlist'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MyColors.primaryAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildPlaylistGrid(BuildContext context, PlaylistService playlistService) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: playlistService.playlists.length + 1, // +1 for the add button
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.8,
       ),
-    );
-  }
-
-  Widget _buildPlaylistList(BuildContext context, PlaylistService playlistService) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: playlistService.playlists.length,
       itemBuilder: (context, index) {
-        final playlist = playlistService.playlists[index];
-        return _buildPlaylistItem(context, playlist, playlistService);
+        if (index == 0) {
+          return _buildAddPlaylistCard(context, playlistService);
+        }
+        final playlist = playlistService.playlists[index - 1];
+        return _buildPlaylistCard(context, playlist, playlistService);
       },
     );
   }
 
-  Widget _buildPlaylistItem(BuildContext context, Playlist playlist, PlaylistService playlistService) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: MyColors.secondaryBackground,
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildAddPlaylistCard(BuildContext context, PlaylistService playlistService) {
+    return GestureDetector(
+      onTap: () => _showCreatePlaylistDialog(context, playlistService),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: MyColors.secondaryBackground,
+          border: Border.all(
+            color: MyColors.primaryAccent.withOpacity(0.5),
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add,
+              color: MyColors.primaryAccent,
+              size: 48,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create Playlist',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: MyColors.primaryText,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: MyColors.primaryAccent.withOpacity(0.1),
-          ),
-          child: playlist.tracks.isNotEmpty && playlist.tracks.first.artworkUrl != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    playlist.tracks.first.artworkUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildPlaylistPlaceholder(),
-                  ),
-                )
-              : _buildPlaylistPlaceholder(),
+    );
+  }
+
+  Widget _buildPlaylistCard(BuildContext context, Playlist playlist, PlaylistService playlistService) {
+    return GestureDetector(
+      onTap: () => _openPlaylistDetail(context, playlist),
+      child: Container(
+        decoration: BoxDecoration(
+          color: MyColors.secondaryBackground,
+          borderRadius: BorderRadius.circular(12),
         ),
-        title: Text(
-          playlist.name,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: MyColors.primaryText,
-            fontWeight: FontWeight.bold,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          '${playlist.tracks.length} ${playlist.tracks.length == 1 ? 'song' : 'songs'}',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: MyColors.secondaryText,
-          ),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, color: MyColors.primaryText),
-          onSelected: (value) {
-            switch (value) {
-              case 'rename':
-                _showRenamePlaylistDialog(context, playlist, playlistService);
-                break;
-              case 'delete':
-                _showDeletePlaylistDialog(context, playlist, playlistService);
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'rename',
-              child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Stack(
                 children: [
-                  Icon(Icons.edit, color: MyColors.primaryText, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Rename', style: TextStyle(color: MyColors.primaryText)),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      color: MyColors.primaryAccent.withOpacity(0.1),
+                    ),
+                    child: playlist.tracks.isNotEmpty && playlist.tracks.first.artworkUrl != null
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              playlist.tracks.first.artworkUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildPlaylistPlaceholder(),
+                            ),
+                          )
+                        : _buildPlaylistPlaceholder(),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                        color: MyColors.secondaryBackground,
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'rename':
+                              _showRenamePlaylistDialog(context, playlist, playlistService);
+                              break;
+                            case 'delete':
+                              _showDeletePlaylistDialog(context, playlist, playlistService);
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'rename',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, color: MyColors.primaryText, size: 20),
+                                const SizedBox(width: 8),
+                                Text('Rename', style: TextStyle(color: MyColors.primaryText)),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, color: Colors.red, size: 20),
+                                const SizedBox(width: 8),
+                                Text('Delete', style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            PopupMenuItem(
-              value: 'delete',
-              child: Row(
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.delete, color: Colors.red, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
+                  Text(
+                    playlist.name,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: MyColors.primaryText,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${playlist.tracks.length} ${playlist.tracks.length == 1 ? 'song' : 'songs'}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: MyColors.secondaryText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
           ],
         ),
-        onTap: () => _openPlaylistDetail(context, playlist),
       ),
     );
   }

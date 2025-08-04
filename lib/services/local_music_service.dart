@@ -286,49 +286,31 @@ class LocalMusicService {
   }
 
   void sortSongs(SortCriteria criteria, {bool ascending = true}) {
-    switch (criteria) {
-      case SortCriteria.title:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-            : b.title.toLowerCase().compareTo(a.title.toLowerCase()));
-        break;
+    _sortList(_allSongs, criteria, ascending);
+    _sortList(_filteredSongs, criteria, ascending);
+  }
 
-      case SortCriteria.artist:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.artist.toLowerCase().compareTo(b.artist.toLowerCase())
-            : b.artist.toLowerCase().compareTo(a.artist.toLowerCase()));
-        break;
-
-      case SortCriteria.album:
-        _filteredSongs.sort((a, b) {
-          final albumA = (a.album ?? '').toLowerCase();
-          final albumB = (b.album ?? '').toLowerCase();
-          return ascending ? albumA.compareTo(albumB) : albumB.compareTo(albumA);
-        });
-        break;
-
-      case SortCriteria.duration:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.duration.compareTo(b.duration)
-            : b.duration.compareTo(a.duration));
-        break;
-
-      case SortCriteria.dateAdded:
-        _filteredSongs.sort((a, b) {
+  void _sortList(List<LocalMusicModel> list, SortCriteria criteria, bool ascending) {
+    list.sort((a, b) {
+      int comparison;
+      switch (criteria) {
+        case SortCriteria.title:
+          comparison = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          break;
+        case SortCriteria.dateAdded:
           try {
             final fileA = File(a.filePath);
             final fileB = File(b.filePath);
             final statA = fileA.statSync();
             final statB = fileB.statSync();
-            return ascending
-                ? statA.modified.compareTo(statB.modified)
-                : statB.modified.compareTo(statA.modified);
+            comparison = statA.modified.compareTo(statB.modified);
           } catch (e) {
-            return 0;
+            comparison = 0;
           }
-        });
-        break;
-    }
+          break;
+      }
+      return ascending ? comparison : -comparison;
+    });
   }
 
   void clearCache() {
@@ -359,8 +341,5 @@ class LocalMusicService {
 
 enum SortCriteria {
   title,
-  artist,
-  album,
-  duration,
   dateAdded,
 }

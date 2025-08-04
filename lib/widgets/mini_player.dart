@@ -5,6 +5,7 @@ import 'package:modizk_download/services/local_music_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
 import 'package:modizk_download/services/native_media_notification_service.dart';
+import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:modizk_download/screens/song_player_screen.dart';
 
@@ -113,6 +114,10 @@ class _MiniPlayerState extends State<MiniPlayer> {
                           _buildPlayPauseButton(audioProvider, localProvider, isUsingSoundCloud),
                           const SizedBox(width: 8),
                           _buildNextButton(audioProvider, localProvider, isUsingSoundCloud),
+                          if (isUsingSoundCloud && audioProvider.currentTrack != null) ...[
+                            const SizedBox(width: 8),
+                            _buildMoreOptionsButton(audioProvider),
+                          ],
                         ],
                       ),
                     ),
@@ -421,6 +426,269 @@ class _MiniPlayerState extends State<MiniPlayer> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMoreOptionsButton(SoundCloudAudioProvider audioProvider) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.transparent,
+      ),
+      child: IconButton(
+        onPressed: () => _showMoreOptionsBottomSheet(audioProvider.currentTrack!),
+        icon: Icon(
+          Icons.more_vert,
+          color: MyColors.primaryText,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  void _showMoreOptionsBottomSheet(track) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: MyColors.secondaryBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with song info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: MyColors.primaryBackground,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: track.artworkUrl != null
+                          ? Image.network(
+                              track.artworkUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                            )
+                          : _buildPlaceholder(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          track.title,
+                          style: TextStyle(
+                            color: MyColors.primaryText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          track.user.username,
+                          style: TextStyle(
+                            color: MyColors.secondaryText,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const Divider(height: 1),
+            
+            // Options
+            Consumer<PlaylistService>(
+              builder: (context, playlistService, child) {
+                final isLiked = playlistService.isTrackLiked(track);
+                return ListTile(
+                  leading: Icon(
+                    isLiked ? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : MyColors.primaryText,
+                  ),
+                  title: Text(
+                    isLiked ? 'Remove from Liked Songs' : 'Add to Liked Songs',
+                    style: TextStyle(color: MyColors.primaryText),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _toggleLikeSong(track);
+                  },
+                );
+              },
+            ),
+            
+            ListTile(
+              leading: Icon(Icons.add, color: MyColors.primaryText),
+              title: Text(
+                'Add to Playlist',
+                style: TextStyle(color: MyColors.primaryText),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddToPlaylistDialog(track);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddToPlaylistDialog(track) {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyColors.secondaryBackground,
+        title: Text(
+          'Add to Playlist',
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        content: Container(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.add, color: MyColors.primaryAccent),
+                title: Text(
+                  'Create New Playlist',
+                  style: TextStyle(color: MyColors.primaryText),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showCreatePlaylistDialog(track);
+                },
+              ),
+              if (playlistService.playlists.isNotEmpty) const Divider(),
+              ...playlistService.playlists.map((playlist) => ListTile(
+                leading: Icon(Icons.playlist_play, color: MyColors.primaryText),
+                title: Text(
+                  playlist.name,
+                  style: TextStyle(color: MyColors.primaryText),
+                ),
+                subtitle: Text(
+                  '${playlist.tracks.length} songs',
+                  style: TextStyle(color: MyColors.secondaryText),
+                ),
+                onTap: () async {
+                  await playlistService.addTrackToPlaylist(playlist.id, track);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Added "${track.title}" to ${playlist.name}'),
+                      backgroundColor: MyColors.secondaryBackground,
+                    ),
+                  );
+                },
+              )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: MyColors.secondaryText)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreatePlaylistDialog(track) {
+    final TextEditingController nameController = TextEditingController();
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyColors.secondaryBackground,
+        title: Text(
+          'Create New Playlist',
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(
+            labelText: 'Playlist Name',
+            labelStyle: TextStyle(color: MyColors.secondaryText),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: MyColors.secondaryText),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: MyColors.primaryAccent),
+            ),
+          ),
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: MyColors.secondaryText)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isNotEmpty) {
+                final playlist = await playlistService.createPlaylist(
+                  name: nameController.text.trim(),
+                );
+                await playlistService.addTrackToPlaylist(playlist.id, track);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Created "${playlist.name}" and added "${track.title}"'),
+                    backgroundColor: MyColors.secondaryBackground,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MyColors.primaryAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Create & Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleLikeSong(track) {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    final wasLiked = playlistService.isTrackLiked(track);
+    
+    playlistService.toggleLikeSong(track);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          wasLiked 
+              ? 'Removed "${track.title}" from liked songs'
+              : 'Added "${track.title}" to liked songs',
+        ),
+        backgroundColor: MyColors.secondaryBackground,
       ),
     );
   }

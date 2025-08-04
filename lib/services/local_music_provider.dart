@@ -6,6 +6,7 @@ import '../models/local_music_model.dart';
 import '../services/sound_cloud_audio_provider.dart';
 import '../services/native_media_notification_service.dart';
 import 'local_music_service.dart';
+
 import 'package:provider/provider.dart';
 
 class LocalMusicProvider with ChangeNotifier {
@@ -385,30 +386,8 @@ class LocalMusicProvider with ChangeNotifier {
   }
 
   void sortSongs(SortCriteria criteria, {bool ascending = true}) {
-    switch (criteria) {
-      case SortCriteria.title:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.title.compareTo(b.title)
-            : b.title.compareTo(a.title));
-        break;
-      case SortCriteria.artist:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.artist.compareTo(b.artist)
-            : b.artist.compareTo(a.artist));
-        break;
-      case SortCriteria.album:
-        _filteredSongs.sort((a, b) {
-          final albumA = a.album ?? '';
-          final albumB = b.album ?? '';
-          return ascending ? albumA.compareTo(albumB) : albumB.compareTo(albumA);
-        });
-        break;
-      case SortCriteria.duration:
-        _filteredSongs.sort((a, b) => ascending
-            ? a.duration.compareTo(b.duration)
-            : b.duration.compareTo(a.duration));
-        break;
-    }
+    _localMusicService.sortSongs(criteria, ascending: ascending);
+    _filteredSongs = _localMusicService.filteredSongs;
     _updateCurrentTrackIndex();
     notifyListeners();
   }
@@ -456,9 +435,3 @@ class LocalMusicProvider with ChangeNotifier {
   }
 }
 
-enum SortCriteria {
-  title,
-  artist,
-  album,
-  duration,
-}
