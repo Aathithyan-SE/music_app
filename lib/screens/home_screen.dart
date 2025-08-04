@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:modizk_download/screens/downloads_screen.dart';
 import 'package:modizk_download/screens/my_music_screen.dart';
 import 'package:modizk_download/screens/playlist_screen.dart';
@@ -87,30 +88,50 @@ class _HomeScreenState extends State<HomeScreen> {
           fontSize: 12,
           fontWeight: FontWeight.w400,
         ),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: SvgPicture.asset(
+              'assets/images/ic_home.svg',
+              width: 24,
+              height: 24,
+              color: _currentIndex == 0 ? MyColors.primaryAccent : null,
+            ),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_music_outlined),
-            activeIcon: Icon(Icons.library_music),
+            icon: SvgPicture.asset(
+              'assets/images/ic_my_music.svg',
+              width: 24,
+              height: 24,
+              color: _currentIndex == 1 ? MyColors.primaryAccent : null,
+            ),
             label: 'My Music',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.playlist_play_outlined),
-            activeIcon: Icon(Icons.playlist_play),
+            icon: SvgPicture.asset(
+              'assets/images/ic_playlist.svg',
+              width: 24,
+              height: 24,
+              color: _currentIndex == 2 ? MyColors.primaryAccent : null,
+            ),
             label: 'Playlist',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.download_outlined),
-            activeIcon: Icon(Icons.download),
+            icon: SvgPicture.asset(
+              'assets/images/ic_download.svg',
+              width: 24,
+              height: 24,
+              color: _currentIndex == 3 ? MyColors.primaryAccent : null,
+            ),
             label: 'Downloads',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.star_outline),
-            activeIcon: Icon(Icons.star),
+            icon: SvgPicture.asset(
+              'assets/images/ic_premium.svg',
+              width: 24,
+              height: 24,
+              color: _currentIndex == 4 ? MyColors.primaryAccent : null,
+            ),
             label: 'Premium',
           ),
         ],
