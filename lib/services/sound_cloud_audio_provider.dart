@@ -22,7 +22,6 @@ class SoundCloudAudioProvider with ChangeNotifier {
   
   // Store track collection directly to avoid context dependency
   List<Track> _trackCollection = [];
-  MusicProvider? _musicProviderRef;
 
   SoundCloudAudioProvider() {
     print('🎵🎵🎵 SoundCloudAudioProvider constructor called 🎵🎵🎵');
@@ -49,7 +48,6 @@ class SoundCloudAudioProvider with ChangeNotifier {
   /// Update track collection when new search results are available
   void updateTrackCollection(List<Track> tracks, MusicProvider musicProvider) {
     _trackCollection = tracks;
-    _musicProviderRef = musicProvider;
     log('🎵 Updated track collection with ${tracks.length} tracks');
   }
 
@@ -190,31 +188,31 @@ class SoundCloudAudioProvider with ChangeNotifier {
 
   /// Context-free next track method for notifications
   Future<void> playNextTrack() async {
-    if (hasNext && _musicProviderRef != null) {
+    if (hasNext && _notificationContext != null) {
       int nextIndex = currentIndex + 1;
       setCurrentTrack(_trackCollection[nextIndex], nextIndex);
-      if (currentTrack != null && _notificationContext != null) {
+      if (currentTrack != null) {
         await playTrack(_notificationContext!);
       } else {
-        log('❌ Cannot play next track - missing context or track');
+        log('❌ Cannot play next track - missing track');
       }
     } else {
-      log('❌ No next track available or music provider not set');
+      log('❌ No next track available or context not set');
     }
   }
 
   /// Context-free previous track method for notifications
   Future<void> playPreviousTrack() async {
-    if (hasPrevious && _musicProviderRef != null) {
+    if (hasPrevious && _notificationContext != null) {
       int previousIndex = currentIndex - 1;
       setCurrentTrack(_trackCollection[previousIndex], previousIndex);
-      if (currentTrack != null && _notificationContext != null) {
+      if (currentTrack != null) {
         await playTrack(_notificationContext!);
       } else {
-        log('❌ Cannot play previous track - missing context or track');
+        log('❌ Cannot play previous track - missing track');
       }
     } else {
-      log('❌ No previous track available or music provider not set');
+      log('❌ No previous track available or context not set');
     }
   }
 
@@ -317,19 +315,20 @@ class SoundCloudAudioProvider with ChangeNotifier {
       log('🎵 Final selected transcoding: ${selectedTranscoding.format.protocol} - ${selectedTranscoding.format.mimeType}');
 
       log('🎵 About to get stream URL for: ${selectedTranscoding.url}');
-      int status = await _musicProviderRef!.getStreamUrl(selectedTranscoding.url);
+      // Use the current musicProvider instead of _musicProviderRef to ensure it's available
+      int status = await musicProvider.getStreamUrl(selectedTranscoding.url);
       log('🎵 Stream URL status: $status');
 
       if (status == 2) {
-        log('🎵 Setting audio source: ${_musicProviderRef!.streamUrl!}');
-        await _player.setAudioSource(AudioSource.uri(Uri.parse(_musicProviderRef!.streamUrl!)));
+        log('🎵 Setting audio source: ${musicProvider.streamUrl!}');
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(musicProvider.streamUrl!)));
         log('🎵 Audio source set successfully, calling play()...');
         await _player.play();
         log('🎵 Player.play() called successfully');
         _isLoading = false; // Reset loading state after play starts
         notifyListeners();
       } else if (status == 3) {
-        log("🎵 URL fetch error: ${_musicProviderRef!.streamError}");
+        log("🎵 URL fetch error: ${musicProvider.streamError}");
         _isLoading = false; // Reset loading state on error
         notifyListeners();
       } else {

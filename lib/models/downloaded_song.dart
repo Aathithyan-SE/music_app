@@ -1,3 +1,5 @@
+import 'local_music_model.dart';
+
 class DownloadedSong {
   final String id;
   final String title;
@@ -83,5 +85,19 @@ class DownloadedSong {
     final minutes = (duration / 60000).floor();
     final seconds = ((duration % 60000) / 1000).floor();
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  /// Convert DownloadedSong to LocalMusicModel for playback
+  LocalMusicModel toLocalMusicModel() {
+    return LocalMusicModel(
+      id: id.hashCode, // Convert string ID to int using hashCode
+      title: title,
+      artist: artist,
+      album: null, // Downloaded songs don't have album info
+      artworkPath: artworkUrl, // Use artwork URL as artwork path
+      filePath: localFilePath,
+      duration: duration,
+      genre: null, // Downloaded songs don't have genre info
+    );
   }
 }

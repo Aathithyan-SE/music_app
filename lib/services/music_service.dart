@@ -57,4 +57,12 @@ class MusicService{
     }
   }
 
+  Future<Response> getSoundCloudTrackById(int trackId) async {
+    try {
+      return _dioService.getSoundCloudTrackById(trackId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 }

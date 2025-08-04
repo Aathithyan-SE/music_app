@@ -290,8 +290,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final songProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
     final playlistService = Provider.of<PlaylistService>(context, listen: false);
     
-    // Add to recent songs
+    // For search results, we don't need to refresh since the data is already fresh
+    // Just add to recent songs and play normally
     playlistService.addToRecentSongs(myTrack);
+    
+    // Set up track collection from search results for navigation
+    if (provider.soundCloudResponse != null) {
+      songProvider.updateTrackCollection(provider.soundCloudResponse!.collection, provider);
+    }
     
     songProvider.setCurrentTrack(myTrack, index);
     Navigator.push(

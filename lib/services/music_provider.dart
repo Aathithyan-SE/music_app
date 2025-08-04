@@ -128,4 +128,33 @@ class MusicProvider extends ChangeNotifier{
     return songsLoadMoreStatus;
   }
 
+  int trackByIdStatus = 0;
+  String trackByIdError = '';
+  Track? refreshedTrack;
+
+  Future<int> getTrackById(int trackId) async {
+    try {
+      trackByIdStatus = 1;
+      trackByIdError = '';
+      refreshedTrack = null;
+      notifyListeners();
+      final response = await _musicService.getSoundCloudTrackById(trackId);
+      log('track by id res: ${response.data}');
+      if(response.statusCode! >= 200 && response.statusCode! < 300) {
+        refreshedTrack = Track.fromJson(response.data);
+        trackByIdStatus = 2;
+      }else{
+        trackByIdStatus = 3;
+        trackByIdError = response.data;
+      }
+      log('refreshed track: ${refreshedTrack?.title}');
+    } catch(e){
+      trackByIdStatus = 3;
+      trackByIdError = e.toString();
+      log('track by id error: ${e.toString()}');
+    }
+    notifyListeners();
+    return trackByIdStatus;
+  }
+
 }

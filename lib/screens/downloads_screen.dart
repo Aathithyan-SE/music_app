@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:modizk_download/models/downloaded_song.dart';
 import 'package:modizk_download/services/download_service.dart';
+import 'package:modizk_download/services/local_music_provider.dart';
+import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
+import 'package:modizk_download/screens/local_music_player.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -231,6 +234,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.file_download_done,
@@ -238,23 +242,29 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         color: Colors.green,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        song.formattedFileSize,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: MyColors.secondaryText.withValues(alpha: 0.7),
+                      Flexible(
+                        child: Text(
+                          song.formattedFileSize,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: MyColors.secondaryText.withValues(alpha: 0.7),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Icon(
                         Icons.access_time,
                         size: 12,
                         color: MyColors.secondaryText.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        song.formattedDuration,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: MyColors.secondaryText.withValues(alpha: 0.7),
+                      Flexible(
+                        child: Text(
+                          song.formattedDuration,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: MyColors.secondaryText.withValues(alpha: 0.7),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -265,6 +275,15 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  onPressed: () => _playDownloadedSong(context, song, downloadService),
+                  icon: Icon(
+                    Icons.play_arrow,
+                    color: MyColors.primaryAccent,
+                    size: 24,
+                  ),
+                  tooltip: 'Play',
+                ),
                 IconButton(
                   onPressed: () => _shareDownloadedSong(song),
                   icon: Icon(
@@ -297,6 +316,51 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
       color: MyColors.primaryAccent,
       size: 28,
     );
+  }
+
+  void _playDownloadedSong(BuildContext context, DownloadedSong song, DownloadService downloadService) async {
+    try {
+      final localMusicProvider = Provider.of<LocalMusicProvider>(context, listen: false);
+      final soundCloudProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
+      
+      // Stop any currently playing SoundCloud music
+      if (soundCloudProvider.isPlaying) {
+        await soundCloudProvider.stop();
+      }
+      
+      // Convert downloaded song to LocalMusicModel
+      final localMusicModel = song.toLocalMusicModel();
+      
+      // Create a collection of all downloaded songs as LocalMusicModel
+      final downloadedSongsAsLocal = downloadService.downloadedSongs
+          .map((downloadedSong) => downloadedSong.toLocalMusicModel())
+          .toList();
+      
+      // Find the current song index in the collection
+      final currentIndex = downloadedSongsAsLocal.indexWhere((track) => track.id == localMusicModel.id);
+      
+      // Set the downloaded songs as the current collection in LocalMusicProvider
+      localMusicProvider.setDownloadedSongsCollection(downloadedSongsAsLocal);
+      
+      // Play the selected song
+      await localMusicProvider.playLocalTrack(localMusicModel, currentIndex, context: context);
+      
+      // Navigate to the local music player
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LocalMusicPlayerScreen(shouldStartPlaying: true),
+        ),
+      );
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to play song: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _shareDownloadedSong(DownloadedSong song) async {

@@ -609,14 +609,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _playTrackFromHome(Track track, int index) {
+  void _playTrackFromHome(Track track, int index) async {
     final audioProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
     final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    final musicProvider = Provider.of<MusicProvider>(context, listen: false);
+    
+    // Try to refresh track data before playing
+    Track? refreshedTrack = await playlistService.refreshTrack(track, musicProvider);
+    Track trackToPlay = refreshedTrack ?? track;
     
     // Add to recent songs
-    playlistService.addToRecentSongs(track);
+    playlistService.addToRecentSongs(trackToPlay);
     
-    audioProvider.setCurrentTrack(track, index);
+    // Create a track collection for navigation (using current source list)
+    List<Track> trackCollection = [];
+    int adjustedIndex = index;
+    
+    // Determine which collection we're playing from and set up navigation
+    if (playlistService.recentSongs.contains(track)) {
+      trackCollection = List.from(playlistService.recentSongs);
+      adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
+    } else if (playlistService.likedSongs.contains(track)) {
+      trackCollection = List.from(playlistService.likedSongs);
+      adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
+    } else {
+      // Single track play
+      trackCollection = [trackToPlay];
+      adjustedIndex = 0;
+    }
+    
+    // Update the audio provider with the track collection
+    audioProvider.updateTrackCollection(trackCollection, musicProvider);
+    audioProvider.setCurrentTrack(trackToPlay, adjustedIndex);
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -818,13 +843,26 @@ class AllLikedSongsScreen extends StatelessWidget {
     );
   }
 
-  void _playTrack(BuildContext context, Track track, int index, PlaylistService playlistService) {
+  void _playTrack(BuildContext context, Track track, int index, PlaylistService playlistService) async {
     final audioProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
+    final musicProvider = Provider.of<MusicProvider>(context, listen: false);
+    
+    // Try to refresh track data before playing
+    Track? refreshedTrack = await playlistService.refreshTrack(track, musicProvider);
+    Track trackToPlay = refreshedTrack ?? track;
     
     // Add to recent songs
-    playlistService.addToRecentSongs(track);
+    playlistService.addToRecentSongs(trackToPlay);
     
-    audioProvider.setCurrentTrack(track, index);
+    // Set up track collection for navigation (all liked songs)
+    List<Track> trackCollection = List.from(playlistService.likedSongs);
+    int adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
+    if (adjustedIndex == -1) adjustedIndex = 0;
+    
+    // Update the audio provider with the track collection
+    audioProvider.updateTrackCollection(trackCollection, musicProvider);
+    audioProvider.setCurrentTrack(trackToPlay, adjustedIndex);
+    
     Navigator.push(
       context,
       MaterialPageRoute(

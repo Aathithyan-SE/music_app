@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:modizk_download/models/playlist.dart';
 import 'package:modizk_download/models/sound_cloud_search_response.dart';
+import 'package:modizk_download/services/music_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -176,6 +177,46 @@ class PlaylistService extends ChangeNotifier {
       _playlists[index] = playlist.copyWith(tracks: updatedTracks);
       await _savePlaylists();
       notifyListeners();
+    }
+  }
+
+  Future<bool> moveTrackBetweenPlaylists(String fromPlaylistId, String toPlaylistId, Track track) async {
+    try {
+      // Find both playlists
+      final fromIndex = _playlists.indexWhere((playlist) => playlist.id == fromPlaylistId);
+      final toIndex = _playlists.indexWhere((playlist) => playlist.id == toPlaylistId);
+      
+      if (fromIndex == -1 || toIndex == -1) {
+        return false; // One of the playlists doesn't exist
+      }
+      
+      final fromPlaylist = _playlists[fromIndex];
+      final toPlaylist = _playlists[toIndex];
+      
+      // Check if track exists in source playlist
+      if (!fromPlaylist.tracks.any((t) => t.id == track.id)) {
+        return false; // Track doesn't exist in source playlist
+      }
+      
+      // Check if track already exists in destination playlist
+      if (toPlaylist.tracks.any((t) => t.id == track.id)) {
+        return false; // Track already exists in destination playlist
+      }
+      
+      // Remove from source playlist
+      final fromUpdatedTracks = fromPlaylist.tracks.where((t) => t.id != track.id).toList();
+      _playlists[fromIndex] = fromPlaylist.copyWith(tracks: fromUpdatedTracks);
+      
+      // Add to destination playlist
+      final toUpdatedTracks = List<Track>.from(toPlaylist.tracks)..add(track);
+      _playlists[toIndex] = toPlaylist.copyWith(tracks: toUpdatedTracks);
+      
+      await _savePlaylists();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      log('Error moving track between playlists: $e');
+      return false;
     }
   }
 
@@ -355,4 +396,93 @@ class PlaylistService extends ChangeNotifier {
         : null,
     media: Media.fromJson(json['media']),
   );
+
+  // Track refresh functionality for handling expired tokens
+  Future<Track?> refreshTrack(Track oldTrack, MusicProvider musicProvider) async {
+    try {
+      log('Refreshing track: ${oldTrack.title} (ID: ${oldTrack.id})');
+      final status = await musicProvider.getTrackById(oldTrack.id);
+      
+      if (status == 2 && musicProvider.refreshedTrack != null) {
+        log('Successfully refreshed track: ${musicProvider.refreshedTrack!.title}');
+        return musicProvider.refreshedTrack;
+      } else {
+        log('Failed to refresh track: ${oldTrack.title}, status: $status, error: ${musicProvider.trackByIdError}');
+        return oldTrack; // Return old track if refresh fails
+      }
+    } catch (e) {
+      log('Error refreshing track: $e');
+      return oldTrack; // Return old track if refresh fails
+    }
+  }
+
+  Future<void> refreshRecentSongs(MusicProvider musicProvider) async {
+    try {
+      List<Track> refreshedTracks = [];
+      
+      for (Track track in _recentSongs) {
+        Track? refreshedTrack = await refreshTrack(track, musicProvider);
+        if (refreshedTrack != null) {
+          refreshedTracks.add(refreshedTrack);
+        }
+      }
+      
+      if (refreshedTracks.isNotEmpty) {
+        _recentSongs = refreshedTracks;
+        await _saveRecentSongs();
+        notifyListeners();
+        log('Refreshed ${refreshedTracks.length} recent songs');
+      }
+    } catch (e) {
+      log('Error refreshing recent songs: $e');
+    }
+  }
+
+  Future<void> refreshLikedSongs(MusicProvider musicProvider) async {
+    try {
+      List<Track> refreshedTracks = [];
+      
+      for (Track track in _likedSongs) {
+        Track? refreshedTrack = await refreshTrack(track, musicProvider);
+        if (refreshedTrack != null) {
+          refreshedTracks.add(refreshedTrack);
+        }
+      }
+      
+      if (refreshedTracks.isNotEmpty) {
+        _likedSongs = refreshedTracks;
+        await _saveLikedSongs();
+        notifyListeners();
+        log('Refreshed ${refreshedTracks.length} liked songs');
+      }
+    } catch (e) {
+      log('Error refreshing liked songs: $e');
+    }
+  }
+
+  Future<void> refreshPlaylistTracks(String playlistId, MusicProvider musicProvider) async {
+    try {
+      final playlistIndex = _playlists.indexWhere((p) => p.id == playlistId);
+      if (playlistIndex == -1) return;
+      
+      final playlist = _playlists[playlistIndex];
+      List<Track> refreshedTracks = [];
+      
+      for (Track track in playlist.tracks) {
+        Track? refreshedTrack = await refreshTrack(track, musicProvider);
+        if (refreshedTrack != null) {
+          refreshedTracks.add(refreshedTrack);
+        }
+      }
+      
+      if (refreshedTracks.isNotEmpty) {
+        _playlists[playlistIndex] = playlist.copyWith(tracks: refreshedTracks);
+        await _savePlaylists();
+        notifyListeners();
+        log('Refreshed ${refreshedTracks.length} tracks in playlist: ${playlist.name}');
+      }
+    } catch (e) {
+      log('Error refreshing playlist tracks: $e');
+    }
+  }
 }

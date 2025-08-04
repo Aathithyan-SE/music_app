@@ -91,6 +91,25 @@ class DioNetworkService{
     }
   }
 
+  Future<Response> getSoundCloudTrackById(int trackId) async {
+    await setSoundTokenHeaders();
+    try{
+      log("raw called: /tracks/$trackId");
+      Response response = await soundCloudDio.get('/tracks/$trackId');
+      if(response.statusCode == 401){
+        await getToken();
+        return getSoundCloudTrackById(trackId);
+      }
+      return response;
+    }on DioException catch (e) {
+      log("error: ${e.message}");
+      throw e;
+    }catch (e) {
+      log("error: ${e}");
+      rethrow;
+    }
+  }
+
 
 }
 

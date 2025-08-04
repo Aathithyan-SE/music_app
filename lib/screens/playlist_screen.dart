@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:modizk_download/models/playlist.dart';
 import 'package:modizk_download/models/sound_cloud_search_response.dart';
 import 'package:modizk_download/screens/song_player_screen.dart';
+import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
 import 'package:modizk_download/theme.dart';
@@ -558,9 +559,17 @@ class PlaylistDetailScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: () => _playTrack(context, track, index),
+              onPressed: () => _playTrack(context, track, index, playlist),
               icon: Icon(
                 Icons.play_arrow,
+                color: MyColors.primaryAccent,
+                size: 20,
+              ),
+            ),
+            IconButton(
+              onPressed: () => _showMoveToPlaylistDialog(context, playlist, track),
+              icon: Icon(
+                Icons.swap_horiz,
                 color: MyColors.primaryAccent,
                 size: 20,
               ),
@@ -590,9 +599,27 @@ class PlaylistDetailScreen extends StatelessWidget {
     );
   }
 
-  void _playTrack(BuildContext context, Track track, int index) {
+  void _playTrack(BuildContext context, Track track, int index, Playlist playlist) async {
     final audioProvider = Provider.of<SoundCloudAudioProvider>(context, listen: false);
-    audioProvider.setCurrentTrack(track, index);
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    final musicProvider = Provider.of<MusicProvider>(context, listen: false);
+    
+    // Try to refresh track data before playing
+    Track? refreshedTrack = await playlistService.refreshTrack(track, musicProvider);
+    Track trackToPlay = refreshedTrack ?? track;
+    
+    // Add to recent songs
+    playlistService.addToRecentSongs(trackToPlay);
+    
+    // Set up track collection for navigation (entire playlist)
+    List<Track> trackCollection = List.from(playlist.tracks);
+    int adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
+    if (adjustedIndex == -1) adjustedIndex = index;
+    
+    // Update the audio provider with the track collection
+    audioProvider.updateTrackCollection(trackCollection, musicProvider);
+    audioProvider.setCurrentTrack(trackToPlay, adjustedIndex);
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -611,5 +638,125 @@ class PlaylistDetailScreen extends StatelessWidget {
         backgroundColor: MyColors.secondaryBackground,
       ),
     );
+  }
+
+  void _showMoveToPlaylistDialog(BuildContext context, Playlist currentPlaylist, Track track) {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    
+    // Get all playlists except the current one
+    final availablePlaylists = playlistService.playlists
+        .where((p) => p.id != currentPlaylist.id)
+        .toList();
+    
+    if (availablePlaylists.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No other playlists available to move to'),
+          backgroundColor: MyColors.secondaryBackground,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyColors.secondaryBackground,
+        title: Text(
+          'Move to Playlist',
+          style: TextStyle(color: MyColors.primaryText),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availablePlaylists.length,
+            itemBuilder: (context, index) {
+              final targetPlaylist = availablePlaylists[index];
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: MyColors.primaryAccent.withOpacity(0.1),
+                  ),
+                  child: targetPlaylist.tracks.isNotEmpty && targetPlaylist.tracks.first.artworkUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            targetPlaylist.tracks.first.artworkUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.playlist_play,
+                              color: MyColors.primaryAccent,
+                              size: 20,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.playlist_play,
+                          color: MyColors.primaryAccent,
+                          size: 20,
+                        ),
+                ),
+                title: Text(
+                  targetPlaylist.name,
+                  style: TextStyle(
+                    color: MyColors.primaryText,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  '${targetPlaylist.tracks.length} ${targetPlaylist.tracks.length == 1 ? 'song' : 'songs'}',
+                  style: TextStyle(color: MyColors.secondaryText),
+                ),
+                onTap: () => _moveTrackToPlaylist(
+                  context, 
+                  currentPlaylist, 
+                  targetPlaylist, 
+                  track
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: TextStyle(color: MyColors.secondaryText)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _moveTrackToPlaylist(BuildContext context, Playlist fromPlaylist, Playlist toPlaylist, Track track) async {
+    final playlistService = Provider.of<PlaylistService>(context, listen: false);
+    
+    Navigator.of(context).pop(); // Close dialog first
+    
+    final success = await playlistService.moveTrackBetweenPlaylists(
+      fromPlaylist.id, 
+      toPlaylist.id, 
+      track
+    );
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Moved "${track.title}" to "${toPlaylist.name}"'),
+          backgroundColor: MyColors.secondaryBackground,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to move "${track.title}". It may already exist in "${toPlaylist.name}"'),
+          backgroundColor: Colors.red.withOpacity(0.8),
+        ),
+      );
+    }
   }
 }

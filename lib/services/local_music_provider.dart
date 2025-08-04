@@ -368,6 +368,14 @@ class LocalMusicProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set a custom collection of downloaded songs for playback
+  void setDownloadedSongsCollection(List<LocalMusicModel> downloadedSongs) {
+    _filteredSongs = List.from(downloadedSongs);
+    _songs = List.from(downloadedSongs);
+    notifyListeners();
+    log('Set downloaded songs collection: ${downloadedSongs.length} songs');
+  }
+
   Future<Uint8List?> getSongArtwork(int songId) async {
     try {
       return await _localMusicService.getSongArtwork(songId);

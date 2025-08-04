@@ -107,7 +107,7 @@ class _MyMusicScreenState extends State<MyMusicScreen>
       ),
     );
   }
-
+  
   Widget _buildTabBar() {
     final downloadService = context.watch<DownloadService>();
     final directories = _getSortedDirectories();

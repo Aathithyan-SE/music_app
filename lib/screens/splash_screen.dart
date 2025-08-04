@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:modizk_download/screens/onboarding_screen.dart';
 import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/storage_service.dart';
+import 'package:modizk_download/widgets/rating_dialog.dart';
 import 'package:provider/provider.dart';
 import 'home_screen.dart';
 
@@ -27,22 +28,51 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (status == 2) {
       if (!mounted) return;
+      
+      // Increment login count
+      await StorageService().incrementLoginCount();
+      
       final isFirstLaunch = await StorageService().isFirstLaunch();
       if (isFirstLaunch) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const OnboardingScreen()),
         );
-      }else{
+      } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+        
+        // Check if we should show rating prompt after navigation
+        _checkAndShowRatingPrompt();
       }
 
     } else {
       debugPrint("Token fetch failed: ${provider.tokenError}");
     }
+  }
+
+  Future<void> _checkAndShowRatingPrompt() async {
+    // Wait a bit to ensure home screen is loaded
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    if (!mounted) return;
+    
+    final shouldShow = await StorageService().shouldShowRatingPrompt();
+    if (shouldShow) {
+      _showRatingDialog();
+    }
+  }
+
+  void _showRatingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const RatingDialog();
+      },
+    );
   }
 
   @override
