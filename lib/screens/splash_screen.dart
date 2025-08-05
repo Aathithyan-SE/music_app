@@ -31,22 +31,25 @@ class _SplashScreenState extends State<SplashScreen> {
       
       // Increment login count
       await StorageService().incrementLoginCount();
-      
-      final isFirstLaunch = await StorageService().isFirstLaunch();
-      if (isFirstLaunch) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
+      Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
+      // final isFirstLaunch = await StorageService().isFirstLaunch();
+      // if (isFirstLaunch) {
+      //   Navigator.pushReplacement(
+      //     context,
+      //     MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      //   );
+      // } else {
+      //   Navigator.pushReplacement(
+      //     context,
+      //     MaterialPageRoute(builder: (context) => const HomeScreen()),
+      //   );
         
-        // Check if we should show rating prompt after navigation
-        _checkAndShowRatingPrompt();
-      }
+      //   // Check if we should show rating prompt after navigation
+      //   _checkAndShowRatingPrompt();
+      // }
 
     } else {
       debugPrint("Token fetch failed: ${provider.tokenError}");

@@ -132,6 +132,13 @@ class LocalMusicService {
 
   Future<Uint8List?> getSongArtwork(int songId) async {
     try {
+      // Check if we have permission before querying
+      final hasPermission = await _audioQuery.permissionsStatus();
+      if (!hasPermission) {
+        log('No permission to query artwork for song ID: $songId');
+        return null;
+      }
+
       final artwork = await _audioQuery.queryArtwork(
         songId,
         ArtworkType.AUDIO,
@@ -149,6 +156,10 @@ class LocalMusicService {
       return null;
     } catch (e) {
       log('Error getting artwork for song ID $songId: $e');
+      // If it's a permission error, don't retry
+      if (e.toString().contains('Permission') || e.toString().contains('MissingPermissions')) {
+        log('Permission denied for artwork query - skipping future attempts');
+      }
       return null;
     }
   }

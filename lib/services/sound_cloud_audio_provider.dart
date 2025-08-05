@@ -220,7 +220,16 @@ class SoundCloudAudioProvider with ChangeNotifier {
   Future<void> playNext(BuildContext context) async {
     final musicProvider = Provider.of<MusicProvider>(context, listen: false);
 
-    if (musicProvider.soundCloudResponse != null &&
+    // First priority: Use stored track collection (from playlists, recent/liked songs)
+    if (_trackCollection.isNotEmpty && currentIndex < _trackCollection.length - 1) {
+      int nextIndex = currentIndex + 1;
+      setCurrentTrack(_trackCollection[nextIndex], nextIndex);
+      if (currentTrack != null) {
+        await playTrack(context);
+      }
+    }
+    // Fallback: Use search results if no track collection is available
+    else if (musicProvider.soundCloudResponse != null &&
         currentIndex < musicProvider.soundCloudResponse!.collection.length - 1) {
       int nextIndex = currentIndex + 1;
       setCurrentTrack(musicProvider.soundCloudResponse!.collection[nextIndex], nextIndex);
@@ -234,7 +243,16 @@ class SoundCloudAudioProvider with ChangeNotifier {
   Future<void> playPrevious(BuildContext context) async {
     final musicProvider = Provider.of<MusicProvider>(context, listen: false);
 
-    if (musicProvider.soundCloudResponse != null && currentIndex > 0) {
+    // First priority: Use stored track collection (from playlists, recent/liked songs)
+    if (_trackCollection.isNotEmpty && currentIndex > 0) {
+      int previousIndex = currentIndex - 1;
+      setCurrentTrack(_trackCollection[previousIndex], previousIndex);
+      if (currentTrack != null) {
+        await playTrack(context);
+      }
+    }
+    // Fallback: Use search results if no track collection is available
+    else if (musicProvider.soundCloudResponse != null && currentIndex > 0) {
       int previousIndex = currentIndex - 1;
       setCurrentTrack(musicProvider.soundCloudResponse!.collection[previousIndex], previousIndex);
       if (currentTrack != null) {
@@ -246,7 +264,17 @@ class SoundCloudAudioProvider with ChangeNotifier {
   Future<void> playTrackAtIndex(BuildContext context, int index) async {
     final musicProvider = Provider.of<MusicProvider>(context, listen: false);
 
-    if (musicProvider.soundCloudResponse != null &&
+    // First priority: Use stored track collection (from playlists, recent/liked songs)
+    if (_trackCollection.isNotEmpty &&
+        index >= 0 &&
+        index < _trackCollection.length) {
+      setCurrentTrack(_trackCollection[index], index);
+      if (currentTrack != null) {
+        await playTrack(context);
+      }
+    }
+    // Fallback: Use search results if no track collection is available
+    else if (musicProvider.soundCloudResponse != null &&
         index >= 0 &&
         index < musicProvider.soundCloudResponse!.collection.length) {
       setCurrentTrack(musicProvider.soundCloudResponse!.collection[index], index);
@@ -268,11 +296,8 @@ class SoundCloudAudioProvider with ChangeNotifier {
       // Store context for notification callbacks
       _notificationContext = context;
       
-      // Get and store music provider reference and track collection
+      // Get music provider reference
       final musicProvider = Provider.of<MusicProvider>(context, listen: false);
-      if (musicProvider.soundCloudResponse != null) {
-        updateTrackCollection(musicProvider.soundCloudResponse!.collection, musicProvider);
-      }
       
       // Setup notification callbacks if not already done
       _setupNotificationCallbacks();

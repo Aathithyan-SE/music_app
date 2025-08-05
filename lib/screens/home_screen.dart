@@ -419,25 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: MyColors.primaryAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: MyColors.primaryAccent.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                '🎵 Start exploring music',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: MyColors.primaryAccent,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+
           ],
         ),
       ),
@@ -487,25 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                '❤️ Discover & like music',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+
           ],
         ),
       ),
@@ -618,18 +582,19 @@ class _HomeScreenState extends State<HomeScreen> {
     Track? refreshedTrack = await playlistService.refreshTrack(track, musicProvider);
     Track trackToPlay = refreshedTrack ?? track;
     
-    // Add to recent songs
-    playlistService.addToRecentSongs(trackToPlay);
-    
     // Create a track collection for navigation (using current source list)
+    // IMPORTANT: Check collection membership BEFORE adding to recent songs
     List<Track> trackCollection = [];
     int adjustedIndex = index;
     
     // Determine which collection we're playing from and set up navigation
-    if (playlistService.recentSongs.contains(track)) {
+    bool isInRecent = playlistService.recentSongs.any((t) => t.id == track.id);
+    bool isInLiked = playlistService.likedSongs.any((t) => t.id == track.id);
+    
+    if (isInRecent) {
       trackCollection = List.from(playlistService.recentSongs);
       adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
-    } else if (playlistService.likedSongs.contains(track)) {
+    } else if (isInLiked) {
       trackCollection = List.from(playlistService.likedSongs);
       adjustedIndex = trackCollection.indexWhere((t) => t.id == track.id);
     } else {
@@ -637,6 +602,9 @@ class _HomeScreenState extends State<HomeScreen> {
       trackCollection = [trackToPlay];
       adjustedIndex = 0;
     }
+    
+    // Add to recent songs AFTER determining source collection
+    playlistService.addToRecentSongs(trackToPlay);
     
     // Update the audio provider with the track collection
     audioProvider.updateTrackCollection(trackCollection, musicProvider);

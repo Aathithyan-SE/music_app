@@ -23,7 +23,7 @@ class MusicService{
   }
   Future<Response> getSoundCloudSearchSongs(String key) async {
     try {
-      return _dioService.getSoundCloud('/search/tracks?q=$key&downloadable=true&streamable=true&limit=100');
+      return _dioService.getSoundCloud('/search/tracks?q=$key&downloadable=true&streamable=true&limit=30');
     } catch (e) {
       rethrow;
     }

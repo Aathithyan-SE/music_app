@@ -39,6 +39,9 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final safePadding = MediaQuery.of(context).padding;
+    final availableHeight = screenHeight - safePadding.top - safePadding.bottom;
 
     final provider = Provider.of<SoundCloudAudioProvider>(context);
     final musicProvider = Provider.of<MusicProvider>(context);
@@ -46,70 +49,78 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
     return Scaffold(
       backgroundColor: MyColors.primaryBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              // Header - fixed height
+              _buildHeader(context),
+              
+              // Main content - flexible
+              Expanded(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildAlbumArt(provider),
-                    const SizedBox(height: 32),
+                    // Album art - responsive size
+                    _buildResponsiveAlbumArt(provider, availableHeight),
+                    
+                    // Song details
                     _buildSongDetails(context, provider),
-                    const SizedBox(height: 32),
+                    
+                    // Progress bar
                     _buildProgressBar(context),
-                    const SizedBox(height: 32),
+                    
+                    // Playback controls
                     _buildPlaybackControls(context, musicProvider),
+                    
+                    // Action buttons - part of main content flow
+                    _buildActionButtons(context),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: _buildActionButtons(context),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.keyboard_arrow_down,
-              color: MyColors.primaryText,
-              size: 32,
-            ),
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            color: MyColors.primaryText,
+            size: 32,
           ),
-          const Spacer(),
-          // IconButton(
-          //   onPressed: () {
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       const SnackBar(content: Text('Share song coming soon!')),
-          //     );
-          //   },
-          //   icon: Icon(
-          //     Icons.share_outlined,
-          //     color: ModizkColors.primaryText,
-          //     size: 24,
-          //   ),
-          // ),
-        ],
-      ),
+        ),
+        const Spacer(),
+        // IconButton(
+        //   onPressed: () {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('Share song coming soon!')),
+        //     );
+        //   },
+        //   icon: Icon(
+        //     Icons.share_outlined,
+        //     color: ModizkColors.primaryText,
+        //     size: 24,
+        //   ),
+        // ),
+      ],
     );
   }
 
-  Widget _buildAlbumArt(SoundCloudAudioProvider provider) {
+  Widget _buildResponsiveAlbumArt(SoundCloudAudioProvider provider, double availableHeight) {
+    // Calculate responsive album art size based on available screen height
+    // Reserve space for other UI elements and make album art 35-40% of available height
+    final albumArtSize = (availableHeight * 0.35).clamp(200.0, 320.0);
+    
     return Container(
-      width: 300,
-      height: 300,
+      width: albumArtSize,
+      height: albumArtSize,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -223,7 +234,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -251,49 +262,43 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
   Widget _buildPlaybackControls(BuildContext context, MusicProvider musicProvider) {
     return Consumer<SoundCloudAudioProvider>(
       builder: (context, audioProvider, child) {
-        return Column(
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // Primary controls
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildControlButton(
-                  Icons.skip_previous,
-                  MyColors.primaryText,
-                      () {
-                        audioProvider.playPrevious(context);
-                  },
-                  size: 32,
-                ),
-                _buildControlButton(
-                  // audioProvider.isLoading
-                  //     ? Icons.hourglass_empty
-                  //     :
-                  (audioProvider.isPlaying ? Icons.pause : Icons.play_arrow),
-                  MyColors.primaryAccent,
-                  audioProvider.isLoading
-                      ? null
-                      : () {
-                    if (audioProvider.isPlaying) {
-                      audioProvider.pause();
-                    } else {
-                      audioProvider.resume();
-                    }
-                  },
-                  size: 56,
-                  isMainButton: true,
-                ),
-                _buildControlButton(
-                  Icons.skip_next,
-                  MyColors.primaryText,
-                      () {
-                        audioProvider.playNext(context);
-                      },
-                  size: 32,
-                ),
-              ],
+            _buildControlButton(
+              Icons.skip_previous,
+              MyColors.primaryText,
+                  () {
+                    audioProvider.playPrevious(context);
+              },
+              size: 32,
             ),
-            const SizedBox(height: 24),
+            _buildControlButton(
+              // audioProvider.isLoading
+              //     ? Icons.hourglass_empty
+              //     :
+              (audioProvider.isPlaying ? Icons.pause : Icons.play_arrow),
+              MyColors.primaryAccent,
+              audioProvider.isLoading
+                  ? null
+                  : () {
+                if (audioProvider.isPlaying) {
+                  audioProvider.pause();
+                } else {
+                  audioProvider.resume();
+                }
+              },
+              size: 56,
+              isMainButton: true,
+            ),
+            _buildControlButton(
+              Icons.skip_next,
+              MyColors.primaryText,
+                  () {
+                    audioProvider.playNext(context);
+                  },
+              size: 32,
+            ),
           ],
         );
       },

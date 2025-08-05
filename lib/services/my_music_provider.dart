@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:modizk_download/services/local_music_provider.dart';
 import 'package:modizk_download/services/local_music_service.dart';
 
 enum MyMusicTab { songs, downloads }
@@ -25,6 +24,12 @@ class MyMusicProvider with ChangeNotifier {
       _sortCriteria = criteria;
       _sortAscending = true;
     }
+    notifyListeners();
+  }
+
+  void setSortWithDirection(SortCriteria criteria, bool ascending) {
+    _sortCriteria = criteria;
+    _sortAscending = ascending;
     notifyListeners();
   }
 }

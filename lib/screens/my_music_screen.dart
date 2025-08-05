@@ -198,10 +198,100 @@ class _MyMusicScreenState extends State<MyMusicScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                TextButton.icon(
-                  onPressed: () => _showSortOptions(context),
-                  icon: Icon(Icons.sort, color: MyColors.primaryAccent, size: 20),
-                  label: Text('Sort By', style: TextStyle(color: MyColors.primaryAccent)),
+                Consumer<MyMusicProvider>(
+                  builder: (context, myMusicProvider, child) {
+                    return DropdownButton<String>(
+                      value: '${myMusicProvider.sortCriteria.name}_${myMusicProvider.sortAscending ? 'asc' : 'desc'}',
+                      underline: Container(),
+                      icon: Icon(Icons.keyboard_arrow_down, color: MyColors.primaryAccent, size: 20),
+                      dropdownColor: MyColors.secondaryBackground,
+                      style: TextStyle(color: MyColors.primaryAccent),
+                      hint: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.sort, color: MyColors.primaryAccent, size: 20),
+                          const SizedBox(width: 8),
+                          Text('Sort By', style: TextStyle(color: MyColors.primaryAccent)),
+                        ],
+                      ),
+                      selectedItemBuilder: (BuildContext context) {
+                        return [
+                          'title_asc',
+                          'title_desc', 
+                          'dateAdded_desc',
+                          'dateAdded_asc'
+                        ].map<Widget>((String value) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sort, color: MyColors.primaryAccent, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Sort By', style: TextStyle(color: MyColors.primaryAccent)),
+                            ],
+                          );
+                        }).toList();
+                      },
+                      items: [
+                        DropdownMenuItem(
+                          value: 'title_asc',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sort_by_alpha, color: MyColors.primaryText, size: 14),
+                              const SizedBox(width: 6),
+                              Text('Title A-Z', style: TextStyle(color: MyColors.primaryText, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'title_desc',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sort_by_alpha, color: MyColors.primaryText, size: 14),
+                              const SizedBox(width: 6),
+                              Text('Title Z-A', style: TextStyle(color: MyColors.primaryText, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'dateAdded_desc',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.date_range, color: MyColors.primaryText, size: 14),
+                              const SizedBox(width: 6),
+                              Text('Newest First', style: TextStyle(color: MyColors.primaryText, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'dateAdded_asc',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.date_range, color: MyColors.primaryText, size: 14),
+                              const SizedBox(width: 6),
+                              Text('Oldest First', style: TextStyle(color: MyColors.primaryText, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onChanged: (String? value) {
+                        if (value != null) {
+                          final parts = value.split('_');
+                          final criteria = parts[0] == 'title' ? SortCriteria.title : SortCriteria.dateAdded;
+                          final ascending = parts[1] == 'asc';
+                          
+                          myMusicProvider.setSortWithDirection(criteria, ascending);
+                          context.read<LocalMusicProvider>().sortSongs(
+                            criteria,
+                            ascending: ascending,
+                          );
+                        }
+                      },
+                    );
+                  },
                 ),
               ],
             ),
@@ -436,65 +526,5 @@ class _MyMusicScreenState extends State<MyMusicScreen>
     return '$minutes:$seconds';
   }
 
-  void _showSortOptions(BuildContext context) {
-    final myMusicProvider = context.read<MyMusicProvider>();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: MyColors.secondaryBackground,
-      builder: (context) {
-        return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-          return Wrap(
-            children: [
-              ListTile(
-                leading: Icon(Icons.sort_by_alpha, color: MyColors.primaryText),
-                title: Text('Sort by Title',
-                    style: TextStyle(color: MyColors.primaryText)),
-                trailing: myMusicProvider.sortCriteria == SortCriteria.title
-                    ? Icon(
-                        myMusicProvider.sortAscending
-                            ? Icons.arrow_upward
-                            : Icons.arrow_downward,
-                        color: MyColors.primaryAccent,
-                      )
-                    : null,
-                onTap: () {
-                  setState(() {
-                    myMusicProvider.setSort(SortCriteria.title);
-                  });
-                  context.read<LocalMusicProvider>().sortSongs(
-                        myMusicProvider.sortCriteria,
-                        ascending: myMusicProvider.sortAscending,
-                      );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.date_range, color: MyColors.primaryText),
-                title: Text('Sort by Date Added',
-                    style: TextStyle(color: MyColors.primaryText)),
-                trailing:
-                    myMusicProvider.sortCriteria == SortCriteria.dateAdded
-                        ? Icon(
-                            myMusicProvider.sortAscending
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
-                            color: MyColors.primaryAccent,
-                          )
-                        : null,
-                onTap: () {
-                  setState(() {
-                    myMusicProvider.setSort(SortCriteria.dateAdded);
-                  });
-                  context.read<LocalMusicProvider>().sortSongs(
-                        myMusicProvider.sortCriteria,
-                        ascending: myMusicProvider.sortAscending,
-                      );
-                },
-              ),
-            ],
-          );
-        });
-      },
-    );
-  }
+
 }

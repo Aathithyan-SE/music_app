@@ -151,7 +151,12 @@ class LocalMusicProvider with ChangeNotifier {
       // Get artwork bytes for local music
       Uint8List? artworkBytes;
       try {
-        artworkBytes = await getSongArtwork(_currentLocalTrack!.id);
+        // Only try to get artwork for system music files, not downloaded songs
+        if (!_isDownloadedSong(_currentLocalTrack!)) {
+          artworkBytes = await getSongArtwork(_currentLocalTrack!.id);
+        } else {
+          log('Skipping artwork for downloaded song in notification: ${_currentLocalTrack!.title}');
+        }
       } catch (e) {
         log('Error getting artwork for notification: $e');
       }
@@ -378,11 +383,24 @@ class LocalMusicProvider with ChangeNotifier {
 
   Future<Uint8List?> getSongArtwork(int songId) async {
     try {
+      // Check if this is a downloaded song by looking at the current track
+      if (_currentLocalTrack != null && _isDownloadedSong(_currentLocalTrack!)) {
+        log('Skipping artwork query for downloaded song: ${_currentLocalTrack!.title}');
+        return null; // Don't try to get artwork from system media library for downloaded songs
+      }
+      
       return await _localMusicService.getSongArtwork(songId);
     } catch (e) {
       log('Error getting artwork: $e');
       return null;
     }
+  }
+
+  /// Check if a song is a downloaded song (not from system media library)
+  bool _isDownloadedSong(LocalMusicModel song) {
+    // Downloaded songs have artwork URLs instead of file paths
+    return song.artworkPath != null && 
+           song.artworkPath!.startsWith('http');
   }
 
   void shufflePlaylist() {
