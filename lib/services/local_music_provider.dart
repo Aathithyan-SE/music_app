@@ -133,6 +133,18 @@ class LocalMusicProvider with ChangeNotifier {
     log('🎵 Local _updateNotification called - currentTrack: ${_currentLocalTrack?.title}, isPlaying: $_isLocalPlaying');
     
     if (_currentLocalTrack != null) {
+      // Check if notification service is available
+      if (!NativeMediaNotificationService.instance.isInitialized) {
+        log('🎵 Notification service not initialized - skipping update');
+        return;
+      }
+      
+      // Don't show notification if user explicitly closed it
+      // This check prevents the notification from reappearing when streams trigger updates
+      if (NativeMediaNotificationService.instance.activeProvider == 'none') {
+        log('🎵 Active provider is none - user likely closed notification, skipping update');
+        return;
+      }
       // Wait for service to be initialized if it's not ready yet
       if (!NativeMediaNotificationService.instance.isInitialized) {
         log('🎵 Waiting for notification service to initialize...');
@@ -238,6 +250,9 @@ class LocalMusicProvider with ChangeNotifier {
 
   Future<void> playLocalTrack(LocalMusicModel track, int index, {BuildContext? context}) async {
     try {
+      // Reset notification explicit close flag when starting new track
+      NativeMediaNotificationService.instance.resetExplicitClose();
+      
       // Setup notification callbacks if not already done
       _setupNotificationCallbacks();
       

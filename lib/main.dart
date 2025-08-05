@@ -10,6 +10,7 @@ import 'package:modizk_download/services/native_media_notification_service.dart'
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/download_service.dart';
 import 'package:modizk_download/services/my_music_provider.dart';
+import 'package:modizk_download/services/admob_service.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 
@@ -123,6 +124,14 @@ class _MusicMp3DownloaderState extends State<MusicMp3Downloader> with WidgetsBin
       print('✅ DownloadService initialized');
     } catch (e) {
       print('❌ DownloadService failed: $e');
+    }
+    
+    // Initialize AdMob
+    try {
+      await AdMobService.initialize();
+      print('✅ AdMobService initialized');
+    } catch (e) {
+      print('❌ AdMobService failed: $e');
     }
     
     // Initialize media notification service with detailed logging

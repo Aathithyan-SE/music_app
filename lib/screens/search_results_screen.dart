@@ -5,6 +5,7 @@ import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/download_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
+import 'package:modizk_download/services/admob_service.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:modizk_download/widgets/mini_player.dart';
@@ -77,6 +78,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 controller: _searchController,
                 onSubmitted: (query) {
                   if (query.trim().isNotEmpty) {
+                    // Track search and potentially show ad
+                    AdMobService.instance.trackSearchAndShowAd();
                     provider.searchSong(query);
                   }
                 },
@@ -460,6 +463,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final success = await downloadService.downloadTrack(track, musicProvider);
     
     if (success) {
+      // Show interstitial ad after successful download
+      AdMobService.instance.showInterstitialAd();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Downloaded "${track.title}" successfully!'),

@@ -50,5 +50,9 @@
     <string>This app needs access to your music library to play local music files.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>This app needs microphone access for audio playback.</string>
+    
+    <!-- AdMob App ID (Test App ID) -->
+    <key>GADApplicationIdentifier</key>
+    <string>ca-app-pub-3940256099942544~1458002511</string>
 </dict>
 </plist>

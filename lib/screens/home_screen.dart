@@ -8,11 +8,14 @@ import 'package:modizk_download/screens/song_player_screen.dart';
 import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
+import 'package:modizk_download/services/local_music_provider.dart';
+import 'package:modizk_download/services/admob_service.dart';
 import 'package:modizk_download/utils/my_color.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 import 'package:modizk_download/widgets/mini_player.dart';
 import 'package:modizk_download/screens/search_results_screen.dart';
+import 'package:modizk_download/widgets/banner_ad_widget.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:modizk_download/models/sound_cloud_search_response.dart';
 
@@ -32,8 +35,40 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: MyColors.primaryBackground,
       body: SafeArea(
-        child: MiniPlayerWrapper(
-          child: _getCurrentScreen(),
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: _getCurrentScreen(),
+                ),
+                // Check if mini player is active
+                Consumer2<SoundCloudAudioProvider, LocalMusicProvider>(
+                  builder: (context, audioProvider, localProvider, child) {
+                    final bool hasSoundCloudTrack = audioProvider.currentTrack != null;
+                    final bool hasLocalTrack = localProvider.currentLocalTrack != null;
+                    final bool hasMiniPlayer = hasSoundCloudTrack || hasLocalTrack;
+                    
+                    if (hasMiniPlayer) {
+                      // If mini player is active, show banner ad above it
+                      return Column(
+                        children: [
+                          const BannerAdWidget(),
+                          Container(
+                            height: 80,
+                            child: const MiniPlayer(),
+                          ),
+                        ],
+                      );
+                    } else {
+                      // If no mini player, show banner ad above bottom nav
+                      return const BannerAdWidget();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -227,6 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               onSubmitted: (query) {
                 if (query.trim().isNotEmpty) {
+                  // Track search and potentially show ad
+                  AdMobService.instance.trackSearchAndShowAd();
                   provider.searchSong(query);
                   setState(() {
                     _searchController.text = '';
@@ -259,6 +296,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMoodIcon(String emoji, String label, MusicProvider provider) {
     return InkWell(
       onTap: () {
+        // Track search and potentially show ad
+        AdMobService.instance.trackSearchAndShowAd();
         provider.searchSong(label);
         Navigator.push(
           context,

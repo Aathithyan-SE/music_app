@@ -3,6 +3,7 @@ import 'package:modizk_download/services/music_provider.dart';
 import 'package:modizk_download/services/playlist_service.dart';
 import 'package:modizk_download/services/download_service.dart';
 import 'package:modizk_download/services/sound_cloud_audio_provider.dart';
+import 'package:modizk_download/services/admob_service.dart';
 import 'package:provider/provider.dart';
 import 'package:modizk_download/theme.dart';
 
@@ -648,6 +649,9 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
     final success = await downloadService.downloadTrack(track, musicProvider);
     
     if (success) {
+      // Show interstitial ad after successful download
+      AdMobService.instance.showInterstitialAd();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Downloaded "${track.title}" successfully!'),

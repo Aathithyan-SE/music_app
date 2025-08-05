@@ -19,6 +19,9 @@ class NativeMediaNotificationService {
   // Track which provider is currently active
   String _activeProvider = 'none'; // 'local', 'soundcloud', or 'none'
   
+  // Track if user explicitly closed the notification to prevent auto-reopening
+  bool _userExplicitlyClosed = false;
+  
   // Track app lifecycle to properly clean up notifications
   StreamSubscription? _taskKillerSubscription;
   
@@ -59,7 +62,7 @@ class NativeMediaNotificationService {
           androidNotificationChannelName: 'Music Player',
           androidNotificationChannelDescription: 'Music playback controls',
           androidNotificationOngoing: false,
-          androidNotificationIcon: 'mipmap/ic_launcher',
+          androidNotificationIcon: 'drawable/ic_music_note',
           androidShowNotificationBadge: true,
           androidStopForegroundOnPause: true,
           androidResumeOnClick: true,
@@ -118,11 +121,19 @@ class NativeMediaNotificationService {
     if (provider != _activeProvider) {
       log('🎵 Switching active provider from $_activeProvider to $provider');
       _activeProvider = provider;
+      // Reset the explicit close flag when switching to a new provider (new song)
+      _userExplicitlyClosed = false;
     }
   }
 
   /// Get the currently active provider
   String get activeProvider => _activeProvider;
+
+  /// Reset the explicit close flag (called when user starts playing a new song)
+  void resetExplicitClose() {
+    _userExplicitlyClosed = false;
+    log('🎵 Notification explicit close flag reset - notifications can show again');
+  }
 
   /// Show music notification (API compatible with MediaNotificationService)
   Future<void> showMusicNotification({
@@ -135,6 +146,12 @@ class NativeMediaNotificationService {
     Uint8List? artworkBytes,
     bool isLocal = false,
   }) async {
+    // Don't show notification if user explicitly closed it
+    if (_userExplicitlyClosed) {
+      log('🎵 Notification was explicitly closed by user - not showing');
+      return;
+    }
+    
     // log('🎵 Native showMusicNotification called: $title by $artist (${isPlaying ? "Playing" : "Paused"}) - isLocal: $isLocal');
     
     // Set active provider based on source
@@ -179,6 +196,13 @@ class NativeMediaNotificationService {
         },
       );
 
+      // Create custom close action with X icon
+      const closeAction = MediaControl(
+        androidIcon: 'drawable/ic_close',
+        label: 'Close',
+        action: MediaAction.stop,
+      );
+
       // Update the media item and playback state through the handler
       final handler = _audioHandler! as MediaNotificationHandler;
       await handler.updateMediaItem(mediaItem);
@@ -187,11 +211,12 @@ class NativeMediaNotificationService {
           MediaControl.skipToPrevious,
           isPlaying ? MediaControl.pause : MediaControl.play,
           MediaControl.skipToNext,
+          closeAction, // Custom close button with X icon
         ],
         systemActions: const {
           MediaAction.seek,
         },
-        androidCompactActionIndices: const [0, 1, 2], // prev, play/pause, next
+        androidCompactActionIndices: const [0, 1, 2], // prev, play/pause, next (close available in expanded view)
         processingState: AudioProcessingState.ready,
         playing: isPlaying,
         updatePosition: currentPosition,
@@ -216,8 +241,9 @@ class NativeMediaNotificationService {
       await handler.cleanup();
       await _audioHandler!.stop();
       
-      // Reset active provider
+      // Reset active provider and explicit close flag
       _activeProvider = 'none';
+      _userExplicitlyClosed = false;
       
       log('🎵 Native media notification hidden and cleaned up');
     } catch (e) {
@@ -327,6 +353,13 @@ class MediaNotificationHandler extends BaseAudioHandler
   
   final NativeMediaNotificationService _service;
   
+  // Debouncing variables to prevent rapid button clicks
+  DateTime? _lastPlayPauseClick;
+  DateTime? _lastNextClick;
+  DateTime? _lastPreviousClick;
+  DateTime? _lastStopClick;
+  static const Duration _debounceDelay = Duration(milliseconds: 500);
+  
   MediaNotificationHandler(this._service);
 
   /// Update the current media item
@@ -343,6 +376,15 @@ class MediaNotificationHandler extends BaseAudioHandler
   /// Handle play button press
   @override
   Future<void> play() async {
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastPlayPauseClick != null && 
+        now.difference(_lastPlayPauseClick!) < _debounceDelay) {
+      log('🎵 Play button debounced');
+      return;
+    }
+    _lastPlayPauseClick = now;
+    
     log('🎵 Native notification play button pressed - active provider: ${_service.activeProvider}');
     
     // Call the appropriate callback based on active provider
@@ -358,19 +400,36 @@ class MediaNotificationHandler extends BaseAudioHandler
         break;
     }
     
-    playbackState.add(playbackState.value.copyWith(
-      playing: true,
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.pause,
-        MediaControl.skipToNext,
-      ],
-    ));
+          // Create custom close action with X icon
+      const closeAction = MediaControl(
+        androidIcon: 'drawable/ic_close',
+        label: 'Close',
+        action: MediaAction.stop,
+      );
+      
+      playbackState.add(playbackState.value.copyWith(
+        playing: true,
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.pause,
+          MediaControl.skipToNext,
+          closeAction, // Custom close button with X icon
+        ],
+      ));
   }
 
   /// Handle pause button press
   @override
   Future<void> pause() async {
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastPlayPauseClick != null && 
+        now.difference(_lastPlayPauseClick!) < _debounceDelay) {
+      log('🎵 Pause button debounced');
+      return;
+    }
+    _lastPlayPauseClick = now;
+    
     log('🎵 Native notification pause button pressed - active provider: ${_service.activeProvider}');
     
     // Call the appropriate callback based on active provider
@@ -386,19 +445,36 @@ class MediaNotificationHandler extends BaseAudioHandler
         break;
     }
     
-    playbackState.add(playbackState.value.copyWith(
-      playing: false,
-      controls: [
-        MediaControl.skipToPrevious,
-        MediaControl.play,
-        MediaControl.skipToNext,
-      ],
-    ));
+          // Create custom close action with X icon
+      const closeAction = MediaControl(
+        androidIcon: 'drawable/ic_close',
+        label: 'Close',
+        action: MediaAction.stop,
+      );
+      
+      playbackState.add(playbackState.value.copyWith(
+        playing: false,
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.play,
+          MediaControl.skipToNext,
+          closeAction, // Custom close button with X icon
+        ],
+      ));
   }
 
   /// Handle next button press
   @override
   Future<void> skipToNext() async {
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastNextClick != null && 
+        now.difference(_lastNextClick!) < _debounceDelay) {
+      log('🎵 Next button debounced');
+      return;
+    }
+    _lastNextClick = now;
+    
     log('🎵 Native notification next button pressed - active provider: ${_service.activeProvider}');
     
     // Call the appropriate callback based on active provider
@@ -418,6 +494,15 @@ class MediaNotificationHandler extends BaseAudioHandler
   /// Handle previous button press
   @override
   Future<void> skipToPrevious() async {
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastPreviousClick != null && 
+        now.difference(_lastPreviousClick!) < _debounceDelay) {
+      log('🎵 Previous button debounced');
+      return;
+    }
+    _lastPreviousClick = now;
+    
     log('🎵 Native notification previous button pressed - active provider: ${_service.activeProvider}');
     
     // Call the appropriate callback based on active provider
@@ -463,7 +548,19 @@ class MediaNotificationHandler extends BaseAudioHandler
   /// Handle stop
   @override
   Future<void> stop() async {
-    log('🎵 Native notification stopped - active provider: ${_service.activeProvider}');
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastStopClick != null && 
+        now.difference(_lastStopClick!) < _debounceDelay) {
+      log('🎵 Stop button debounced');
+      return;
+    }
+    _lastStopClick = now;
+    
+    log('🎵 Native notification close button pressed - active provider: ${_service.activeProvider}');
+    
+    // Mark as explicitly closed by user to prevent auto-reopening
+    _service._userExplicitlyClosed = true;
     
     // Call the appropriate callback based on active provider
     switch (_service.activeProvider) {
@@ -478,6 +575,8 @@ class MediaNotificationHandler extends BaseAudioHandler
         break;
     }
     
+    // Hide the notification completely when close is pressed
+    await _service.hideNotification();
     await cleanup();
     super.stop();
   }
