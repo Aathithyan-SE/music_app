@@ -293,6 +293,9 @@ class SoundCloudAudioProvider with ChangeNotifier {
     log('🎵🎵🎵 playTrack() called! Track: ${currentTrack?.title} 🎵🎵🎵');
     log('🎵 playTrack() called for track: ${currentTrack?.title}');
     try {
+      // Reset notification state when starting new track
+      NativeMediaNotificationService.instance.resetExplicitClose();
+      
       // Store context for notification callbacks
       _notificationContext = context;
       

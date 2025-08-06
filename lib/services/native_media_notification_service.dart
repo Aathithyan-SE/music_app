@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Native Android MediaStyle notification service using audio_service
 /// This creates the same type of media notifications that Spotify, YouTube Music, etc. use
@@ -49,22 +50,80 @@ class NativeMediaNotificationService {
   Function()? onSkipToPrevious;
   Function(Duration)? onSeek;
 
+  // Cache the custom music icon to avoid loading it every time
+  static String? _cachedCustomIconDataUri;
+  
+  /// Load custom music icon from assets and cache it
+  Future<String?> _getCustomMusicIcon() async {
+    if (_cachedCustomIconDataUri != null) {
+      return _cachedCustomIconDataUri;
+    }
+    
+    try {
+      final ByteData assetData = await rootBundle.load('assets/images/ic_music.png');
+      final Uint8List assetBytes = assetData.buffer.asUint8List();
+      final base64String = base64Encode(assetBytes);
+      _cachedCustomIconDataUri = 'data:image/png;base64,$base64String';
+      log('🎵 Custom music icon loaded and cached (${assetBytes.length} bytes)');
+      return _cachedCustomIconDataUri;
+    } catch (e) {
+      log('❌ Failed to load custom music icon: $e');
+      return null;
+    }
+  }
+
+  /// Request notification permissions
+  Future<bool> _requestNotificationPermissions() async {
+    try {
+      log('🎵 Requesting notification permissions...');
+      
+      // Request notification permission for Android 13+
+      final notificationStatus = await Permission.notification.status;
+      log('🎵 Current notification permission status: $notificationStatus');
+      
+      if (notificationStatus.isDenied) {
+        final result = await Permission.notification.request();
+        log('🎵 Notification permission request result: $result');
+        if (result.isDenied) {
+          log('❌ Notification permission denied');
+          return false;
+        }
+      }
+      
+      log('✅ Notification permissions granted');
+      return true;
+    } catch (e) {
+      log('❌ Error requesting notification permissions: $e');
+      return false;
+    }
+  }
+
   /// Initialize the native media notification service
   Future<void> initialize() async {
     if (_isInitialized) return;
     
     try {
       log('🎵 Initializing Native Media Notification Service...');
+      
+      // Request notification permissions first
+      final permissionsGranted = await _requestNotificationPermissions();
+      if (!permissionsGranted) {
+        log('⚠️ Notification permissions not granted, but continuing with initialization...');
+      }
+      
+      // Preload custom music icon
+      await _getCustomMusicIcon();
+      log('🎵 Custom music icon preloaded during initialization');
       _audioHandler = await AudioService.init(
         builder: () => MediaNotificationHandler(this),
         config: AudioServiceConfig(
           androidNotificationChannelId: 'com.mycompany.CounterApp.audio',
           androidNotificationChannelName: 'Music Player',
           androidNotificationChannelDescription: 'Music playback controls',
-          androidNotificationOngoing: false,
-          androidNotificationIcon: 'drawable/ic_music_note',
+          androidNotificationOngoing: true,
+          // Remove icon completely - let it use default or artwork only
           androidShowNotificationBadge: true,
-          androidStopForegroundOnPause: true,
+          androidStopForegroundOnPause: false,
           androidResumeOnClick: true,
           androidNotificationClickStartsActivity: true,
         ),
@@ -134,6 +193,13 @@ class NativeMediaNotificationService {
     _userExplicitlyClosed = false;
     log('🎵 Notification explicit close flag reset - notifications can show again');
   }
+  
+  /// Force reset notification state for debugging
+  void forceResetNotificationState() {
+    _userExplicitlyClosed = false;
+    _activeProvider = 'none';
+    log('🎵 FORCE RESET: notification state cleared');
+  }
 
   /// Show music notification (API compatible with MediaNotificationService)
   Future<void> showMusicNotification({
@@ -152,7 +218,14 @@ class NativeMediaNotificationService {
       return;
     }
     
-    // log('🎵 Native showMusicNotification called: $title by $artist (${isPlaying ? "Playing" : "Paused"}) - isLocal: $isLocal');
+    log('🎵 showMusicNotification - userExplicitlyClosed: $_userExplicitlyClosed, activeProvider: $_activeProvider');
+    log('🎵 Native showMusicNotification called: $title by $artist (${isPlaying ? "Playing" : "Paused"}) - isLocal: $isLocal, isInitialized: $_isInitialized');
+    
+    // Force reset for local music to ensure it always shows
+    if (isLocal) {
+      log('🎵 Local music detected - forcing notification to show');
+      _userExplicitlyClosed = false;
+    }
     
     // Set active provider based on source
     setActiveProvider(isLocal ? 'local' : 'soundcloud');
@@ -163,24 +236,69 @@ class NativeMediaNotificationService {
     }
 
     try {
-      // Handle artwork properly - prioritize actual music artwork over app icon
-      Uri? artworkUri;
+      // Always ensure we have artwork - use custom icon as fallback
+      Uri artworkUri;
       
-      if (artworkBytes != null && artworkBytes.isNotEmpty) {
-        // Convert local artwork bytes to data URI
-        final base64String = base64Encode(artworkBytes);
-        artworkUri = Uri.parse('data:image/jpeg;base64,$base64String');
-        log('🎵 Using local artwork data URI (${artworkBytes.length} bytes)');
-      } else if (artworkUrl != null && artworkUrl.isNotEmpty) {
-        // Use remote artwork URL
-        artworkUri = Uri.parse(artworkUrl);
-        log('🎵 Using remote artwork URL: $artworkUrl');
+      // For local music, ALWAYS use custom icon (no artwork)
+      if (isLocal) {
+        final customIcon = await _getCustomMusicIcon();
+        if (customIcon != null) {
+          artworkUri = Uri.parse(customIcon);
+          log('🎵 Using custom music icon for local music');
+        } else {
+          // Fallback: create a minimal data URI to prevent app logo
+          artworkUri = Uri.parse('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+          log('🎵 Using minimal fallback icon for local music');
+        }
+      } else if (artworkUrl != null && artworkUrl.isNotEmpty && Uri.tryParse(artworkUrl) != null) {
+        // For SoundCloud: try to use track artwork first
+        try {
+          artworkUri = Uri.parse(artworkUrl);
+          log('🎵 Using SoundCloud artwork URL: $artworkUrl');
+        } catch (e) {
+          log('🎵 Error parsing SoundCloud artwork URL: $e');
+          // Fallback to custom icon
+          final customIcon = await _getCustomMusicIcon();
+          if (customIcon != null) {
+            artworkUri = Uri.parse(customIcon);
+            log('🎵 Using custom music icon as SoundCloud fallback');
+          } else {
+            artworkUri = Uri.parse('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+            log('🎵 Using minimal fallback for SoundCloud');
+          }
+        }
+      } else if (artworkBytes != null && artworkBytes.isNotEmpty) {
+        // Use provided artwork bytes
+        try {
+          final base64String = base64Encode(artworkBytes);
+          artworkUri = Uri.parse('data:image/jpeg;base64,$base64String');
+          log('🎵 Using provided artwork bytes (${artworkBytes.length} bytes)');
+        } catch (e) {
+          log('🎵 Error creating artwork data URI: $e');
+          // Fallback to custom icon
+          final customIcon = await _getCustomMusicIcon();
+          if (customIcon != null) {
+            artworkUri = Uri.parse(customIcon);
+            log('🎵 Using custom music icon as bytes fallback');
+          } else {
+            artworkUri = Uri.parse('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+            log('🎵 Using minimal fallback for bytes');
+          }
+        }
       } else {
-        // No artwork available - don't set artUri to avoid showing app icon
-        // log('🎵 No artwork available - notification will show default music icon');
+        // No artwork at all - use custom music icon
+        final customIcon = await _getCustomMusicIcon();
+        if (customIcon != null) {
+          artworkUri = Uri.parse(customIcon);
+          log('🎵 Using custom music icon (no artwork provided)');
+        } else {
+          artworkUri = Uri.parse('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+          log('🎵 Using minimal fallback (no artwork, no custom icon)');
+        }
       }
       
       // Create MediaItem for the notification
+      log('🎵 Creating MediaItem - title: $title, artist: $artist, duration: ${totalDuration.inSeconds}s, artUri: $artworkUri');
       final mediaItem = MediaItem(
         id: isLocal ? 'local_$title' : 'remote_$title',
         title: title,
@@ -195,35 +313,44 @@ class NativeMediaNotificationService {
           'currentPosition': currentPosition.inMilliseconds,
         },
       );
+      log('🎵 MediaItem created successfully');
 
-      // Create custom close action with X icon
-      const closeAction = MediaControl(
-        androidIcon: 'drawable/ic_close',
-        label: 'Close',
-        action: MediaAction.stop,
-      );
+      // Remove stop action to simplify notification - just use standard controls
 
       // Update the media item and playback state through the handler
       final handler = _audioHandler! as MediaNotificationHandler;
+      log('🎵 About to call handler.updateMediaItem...');
       await handler.updateMediaItem(mediaItem);
-      handler.updatePlaybackState(PlaybackState(
+      log('🎵 handler.updateMediaItem completed successfully');
+      
+      // Create playback state with proper configuration
+      final playbackState = PlaybackState(
         controls: [
           MediaControl.skipToPrevious,
           isPlaying ? MediaControl.pause : MediaControl.play,
           MediaControl.skipToNext,
-          closeAction, // Custom close button with X icon
         ],
         systemActions: const {
           MediaAction.seek,
         },
-        androidCompactActionIndices: const [0, 1, 2], // prev, play/pause, next (close available in expanded view)
+        androidCompactActionIndices: const [0, 1, 2], // prev, play/pause, next
         processingState: AudioProcessingState.ready,
         playing: isPlaying,
         updatePosition: currentPosition,
         bufferedPosition: totalDuration,
         speed: isPlaying ? 1.0 : 0.0,
         queueIndex: 0,
-      ));
+      );
+      
+      log('🎵 About to update playback state...');
+      handler.updatePlaybackState(playbackState);
+      log('🎵 Playback state updated successfully');
+      
+      // Ensure the service is started as foreground
+      if (isPlaying) {
+        log('🎵 Starting playback to show notification...');
+        await _audioHandler!.play();
+      }
 
       log('🎵 Native media notification updated: $title by $artist (${isPlaying ? "Playing" : "Paused"})');
     } catch (e) {
@@ -400,20 +527,12 @@ class MediaNotificationHandler extends BaseAudioHandler
         break;
     }
     
-          // Create custom close action with X icon
-      const closeAction = MediaControl(
-        androidIcon: 'drawable/ic_close',
-        label: 'Close',
-        action: MediaAction.stop,
-      );
-      
       playbackState.add(playbackState.value.copyWith(
         playing: true,
         controls: [
           MediaControl.skipToPrevious,
           MediaControl.pause,
           MediaControl.skipToNext,
-          closeAction, // Custom close button with X icon
         ],
       ));
   }
@@ -445,20 +564,12 @@ class MediaNotificationHandler extends BaseAudioHandler
         break;
     }
     
-          // Create custom close action with X icon
-      const closeAction = MediaControl(
-        androidIcon: 'drawable/ic_close',
-        label: 'Close',
-        action: MediaAction.stop,
-      );
-      
       playbackState.add(playbackState.value.copyWith(
         playing: false,
         controls: [
           MediaControl.skipToPrevious,
           MediaControl.play,
           MediaControl.skipToNext,
-          closeAction, // Custom close button with X icon
         ],
       ));
   }

@@ -139,11 +139,10 @@ class LocalMusicProvider with ChangeNotifier {
         return;
       }
       
-      // Don't show notification if user explicitly closed it
-      // This check prevents the notification from reappearing when streams trigger updates
-      if (NativeMediaNotificationService.instance.activeProvider == 'none') {
-        log('🎵 Active provider is none - user likely closed notification, skipping update');
-        return;
+      // Always show notification for local music when playing
+      if (_isLocalPlaying) {
+        log('🎵 Local music is playing - forcing notification to show');
+        NativeMediaNotificationService.instance.resetExplicitClose();
       }
       // Wait for service to be initialized if it's not ready yet
       if (!NativeMediaNotificationService.instance.isInitialized) {
@@ -160,18 +159,8 @@ class LocalMusicProvider with ChangeNotifier {
         }
       }
       
-      // Get artwork bytes for local music
-      Uint8List? artworkBytes;
-      try {
-        // Only try to get artwork for system music files, not downloaded songs
-        if (!_isDownloadedSong(_currentLocalTrack!)) {
-          artworkBytes = await getSongArtwork(_currentLocalTrack!.id);
-        } else {
-          log('Skipping artwork for downloaded song in notification: ${_currentLocalTrack!.title}');
-        }
-      } catch (e) {
-        log('Error getting artwork for notification: $e');
-      }
+      // No artwork for local music - show clean notification
+      log('🎵 Showing local music notification without artwork');
 
       try {
         await NativeMediaNotificationService.instance.showMusicNotification(
@@ -180,7 +169,7 @@ class LocalMusicProvider with ChangeNotifier {
           isPlaying: _isLocalPlaying,
           currentPosition: _localCurrentPosition,
           totalDuration: _localTotalDuration,
-          artworkBytes: artworkBytes,
+          // No artworkBytes or artworkUrl - clean notification
           isLocal: true,
         );
       } catch (e) {
